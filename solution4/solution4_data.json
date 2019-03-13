@@ -32,15 +32,16 @@
       "pipeline FastDetectorisFeature\/FastDetectorisFeature_label1 {{rewind positionBoolean1}} {}",
       "unroll FastDetectorisFeature\/FastDetectorisFeature_label0 {} {}",
       "pipeline FastDetectorisFeature\/FastDetectorisFeature_sae_matrix {} {}",
-      "pipeline FastDetectorisFeature\/FastDetectorisFeature_reset_sae2zero {} {}",
-      "resource FastDetectorisFeature {{variable positionBooleanTextRequiredsae_} {core RAM_T2P_BRAM}} {}"
+      "resource FastDetectorisFeature {{variable positionBooleanTextRequiredsae_} {core RAM_T2P_BRAM}} {}",
+      "array_partition FastDetectorisFeature {{partition positionBooleanCmd} {variable positionBooleanTextRequiredsae_} {cyclic positionBoolean0type} {factor 3} {dim 3}} {}",
+      "pipeline FastDetectorisFeature\/FastDetectorisFeature_reset_sae2zero_inner {} {}"
     ]},
   "ClockInfo": {
     "ClockName": "ap_clk",
     "ClockPeriod": "10",
     "IsCombLogic": "0",
     "II": "x",
-    "Latency": "8",
+    "Latency": "18",
     "Uncertainty": "1.25"
   },
   "Xdc": {"OocClocks": ["create_clock -name ap_clk -period 10.000 [get_ports ap_clk]"]},
@@ -61,13 +62,13 @@
       "impl\/vhdl\/dataflow_parent_loop_1.vhd",
       "impl\/vhdl\/fastCorner.vhd",
       "impl\/vhdl\/FastDetectorisFeabkb.vhd",
-      "impl\/vhdl\/FastDetectorisFeacud.vhd",
-      "impl\/vhdl\/FastDetectorisFeadEe.vhd",
       "impl\/vhdl\/FastDetectorisFeaeOg.vhd",
       "impl\/vhdl\/FastDetectorisFeafYi.vhd",
-      "impl\/vhdl\/FastDetectorisFeatur_1.vhd",
+      "impl\/vhdl\/FastDetectorisFeag8j.vhd",
+      "impl\/vhdl\/FastDetectorisFeahbi.vhd",
+      "impl\/vhdl\/FastDetectorisFeatur_2.vhd",
       "impl\/vhdl\/feedbackWrapperAndOu.vhd",
-      "impl\/vhdl\/feedbackWrapperAnpcA.vhd",
+      "impl\/vhdl\/feedbackWrapperAnqcK.vhd",
       "impl\/vhdl\/fifo_w6_d2_A.vhd",
       "impl\/vhdl\/fifo_w8_d2_A.vhd",
       "impl\/vhdl\/fifo_w15_d2_S.vhd",
@@ -75,18 +76,17 @@
       "impl\/vhdl\/fifo_w17_d2_S.vhd",
       "impl\/vhdl\/fifo_w32_d2_A.vhd",
       "impl\/vhdl\/getXandY.vhd",
-      "impl\/vhdl\/parseEvents_ama_albW.vhd",
-      "impl\/vhdl\/parseEvents_ama_amb6.vhd",
-      "impl\/vhdl\/parseEvents_ama_ancg.vhd",
-      "impl\/vhdl\/parseEvents_ama_aocq.vhd",
       "impl\/vhdl\/parseEvents_AXILiteS_s_axi.vhd",
-      "impl\/vhdl\/parseEvents_dcmp_g8j.vhd",
-      "impl\/vhdl\/parseEvents_mac_mkbM.vhd",
-      "impl\/vhdl\/parseEvents_srem_jbC.vhd",
-      "impl\/vhdl\/parseEvents_uitodhbi.vhd",
-      "impl\/vhdl\/parseEvents_urem_ibs.vhd",
-      "impl\/vhdl\/start_for_fastCorqcK.vhd",
-      "impl\/vhdl\/start_for_feedbacrcU.vhd",
+      "impl\/vhdl\/parseEvents_dcmp_ibs.vhd",
+      "impl\/vhdl\/parseEvents_mux_3mb6.vhd",
+      "impl\/vhdl\/parseEvents_srem_pcA.vhd",
+      "impl\/vhdl\/parseEvents_uitodjbC.vhd",
+      "impl\/vhdl\/parseEvents_urem_kbM.vhd",
+      "impl\/vhdl\/parseEvents_urem_lbW.vhd",
+      "impl\/vhdl\/parseEvents_urem_ncg.vhd",
+      "impl\/vhdl\/parseEvents_urem_ocq.vhd",
+      "impl\/vhdl\/start_for_fastCorrcU.vhd",
+      "impl\/vhdl\/start_for_feedbacsc4.vhd",
       "impl\/vhdl\/parseEvents.vhd"
     ],
     "Verilog": [
@@ -95,18 +95,18 @@
       "impl\/verilog\/fastCorner.v",
       "impl\/verilog\/FastDetectorisFeabkb.v",
       "impl\/verilog\/FastDetectorisFeabkb_ram.dat",
-      "impl\/verilog\/FastDetectorisFeacud.v",
-      "impl\/verilog\/FastDetectorisFeacud_rom.dat",
-      "impl\/verilog\/FastDetectorisFeadEe.v",
-      "impl\/verilog\/FastDetectorisFeadEe_rom.dat",
       "impl\/verilog\/FastDetectorisFeaeOg.v",
       "impl\/verilog\/FastDetectorisFeaeOg_rom.dat",
       "impl\/verilog\/FastDetectorisFeafYi.v",
       "impl\/verilog\/FastDetectorisFeafYi_rom.dat",
-      "impl\/verilog\/FastDetectorisFeatur_1.v",
+      "impl\/verilog\/FastDetectorisFeag8j.v",
+      "impl\/verilog\/FastDetectorisFeag8j_rom.dat",
+      "impl\/verilog\/FastDetectorisFeahbi.v",
+      "impl\/verilog\/FastDetectorisFeahbi_rom.dat",
+      "impl\/verilog\/FastDetectorisFeatur_2.v",
       "impl\/verilog\/feedbackWrapperAndOu.v",
-      "impl\/verilog\/feedbackWrapperAnpcA.v",
-      "impl\/verilog\/feedbackWrapperAnpcA_ram.dat",
+      "impl\/verilog\/feedbackWrapperAnqcK.v",
+      "impl\/verilog\/feedbackWrapperAnqcK_ram.dat",
       "impl\/verilog\/fifo_w6_d2_A.v",
       "impl\/verilog\/fifo_w8_d2_A.v",
       "impl\/verilog\/fifo_w15_d2_S.v",
@@ -114,18 +114,17 @@
       "impl\/verilog\/fifo_w17_d2_S.v",
       "impl\/verilog\/fifo_w32_d2_A.v",
       "impl\/verilog\/getXandY.v",
-      "impl\/verilog\/parseEvents_ama_albW.v",
-      "impl\/verilog\/parseEvents_ama_amb6.v",
-      "impl\/verilog\/parseEvents_ama_ancg.v",
-      "impl\/verilog\/parseEvents_ama_aocq.v",
       "impl\/verilog\/parseEvents_AXILiteS_s_axi.v",
-      "impl\/verilog\/parseEvents_dcmp_g8j.v",
-      "impl\/verilog\/parseEvents_mac_mkbM.v",
-      "impl\/verilog\/parseEvents_srem_jbC.v",
-      "impl\/verilog\/parseEvents_uitodhbi.v",
-      "impl\/verilog\/parseEvents_urem_ibs.v",
-      "impl\/verilog\/start_for_fastCorqcK.v",
-      "impl\/verilog\/start_for_feedbacrcU.v",
+      "impl\/verilog\/parseEvents_dcmp_ibs.v",
+      "impl\/verilog\/parseEvents_mux_3mb6.v",
+      "impl\/verilog\/parseEvents_srem_pcA.v",
+      "impl\/verilog\/parseEvents_uitodjbC.v",
+      "impl\/verilog\/parseEvents_urem_kbM.v",
+      "impl\/verilog\/parseEvents_urem_lbW.v",
+      "impl\/verilog\/parseEvents_urem_ncg.v",
+      "impl\/verilog\/parseEvents_urem_ocq.v",
+      "impl\/verilog\/start_for_fastCorrcU.v",
+      "impl\/verilog\/start_for_feedbacsc4.v",
       "impl\/verilog\/parseEvents.v"
     ],
     "SwDriver": [
@@ -587,7 +586,7 @@
       "ModuleName": "parseEvents",
       "Instances": [{
           "ModuleName": "dataflow_parent_loop_1",
-          "InstanceName": "grp_dataflow_parent_loop_1_fu_80",
+          "InstanceName": "grp_dataflow_parent_loop_1_fu_86",
           "Instances": [{
               "ModuleName": "dataflow_in_loop_par",
               "InstanceName": "dataflow_in_loop_par_U0",
@@ -596,8 +595,8 @@
                   "ModuleName": "fastCorner",
                   "InstanceName": "fastCorner_U0",
                   "Instances": [{
-                      "ModuleName": "FastDetectorisFeatur_1",
-                      "InstanceName": "grp_FastDetectorisFeatur_1_fu_88"
+                      "ModuleName": "FastDetectorisFeatur_2",
+                      "InstanceName": "grp_FastDetectorisFeatur_2_fu_94"
                     }]
                 },
                 {
@@ -634,98 +633,98 @@
           "DSP48E": "0"
         }
       },
-      "FastDetectorisFeatur_1": {
+      "FastDetectorisFeatur_2": {
         "Latency": {
-          "LatencyBest": "2",
-          "LatencyAvg": "30659",
-          "LatencyWorst": "246322",
-          "PipelineIIMin": "2",
-          "PipelineIIMax": "246322",
-          "PipelineII": "2 ~ 246322",
+          "LatencyBest": "12",
+          "LatencyAvg": "21577",
+          "LatencyWorst": "289019",
+          "PipelineIIMin": "12",
+          "PipelineIIMax": "289019",
+          "PipelineII": "12 ~ 289019",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.63"
+          "Estimate": "9.28"
         },
         "Loops": [
           {
-            "Name": "FastDetectorisFeature_reset_sae2zero",
-            "TripCount": "240",
-            "Latency": "21600",
-            "PipelineII": "90",
-            "PipelineDepth": "90"
+            "Name": "FastDetectorisFeature_reset_sae2zero_FastDetectorisFeature_reset_sae2zero_inner",
+            "TripCount": "7200",
+            "Latency": "7201",
+            "PipelineII": "1",
+            "PipelineDepth": "3"
           },
           {
             "Name": "isFeatureOutterLoop",
             "TripCount": "16",
-            "LatencyMin": "367",
-            "LatencyMax": "224719",
-            "Latency": "367 ~ 224719",
+            "LatencyMin": "943",
+            "LatencyMax": "289007",
+            "Latency": "943 ~ 289007",
             "PipelineII": "",
-            "PipelineDepthMin": "23",
-            "PipelineDepthMax": "14045",
-            "PipelineDepth": "23 ~ 14045",
+            "PipelineDepthMin": "59",
+            "PipelineDepthMax": "18063",
+            "PipelineDepth": "59 ~ 18063",
             "Loops": [
               {
                 "Name": "FastDetectorisFeature_label2",
                 "TripCount": "4",
-                "LatencyMin": "20",
-                "LatencyMax": "269",
-                "Latency": "20 ~ 269",
+                "LatencyMin": "56",
+                "LatencyMax": "459",
+                "Latency": "56 ~ 459",
                 "PipelineII": "",
-                "PipelineDepthMin": "5",
-                "PipelineDepthMax": "58",
-                "PipelineDepth": "5 ~ 58",
+                "PipelineDepthMin": "14",
+                "PipelineDepthMax": "96",
+                "PipelineDepth": "14 ~ 96",
                 "Loops": [
                   {
                     "Name": "FastDetectorisFeature_label1",
                     "TripCount": "",
-                    "LatencyMin": "13",
-                    "LatencyMax": "16",
-                    "Latency": "13 ~ 16",
+                    "LatencyMin": "23",
+                    "LatencyMax": "26",
+                    "Latency": "23 ~ 26",
                     "PipelineII": "1",
-                    "PipelineDepth": "12"
+                    "PipelineDepth": "22"
                   },
                   {
                     "Name": "FastDetectorisFeature_label0",
                     "TripCount": "16",
-                    "Latency": "26",
+                    "Latency": "36",
                     "PipelineII": "1",
-                    "PipelineDepth": "12"
+                    "PipelineDepth": "22"
                   }
                 ]
               },
               {
                 "Name": "FastDetectorisFeature_label6_FastDetectorisFeature_label5",
                 "TripCount": "100",
-                "LatencyMin": "1400",
-                "LatencyMax": "13770",
-                "Latency": "1400 ~ 13770",
+                "LatencyMin": "2300",
+                "LatencyMax": "17598",
+                "Latency": "2300 ~ 17598",
                 "PipelineII": "",
-                "PipelineDepthMin": "14",
-                "PipelineDepthMax": "137",
-                "PipelineDepth": "14 ~ 137",
+                "PipelineDepthMin": "23",
+                "PipelineDepthMax": "175",
+                "PipelineDepth": "23 ~ 175",
                 "Loops": [
                   {
                     "Name": "FastDetectorisFeature_label4",
                     "TripCount": "",
-                    "LatencyMin": "47",
-                    "LatencyMax": "51",
-                    "Latency": "47 ~ 51",
+                    "LatencyMin": "57",
+                    "LatencyMax": "61",
+                    "Latency": "57 ~ 61",
                     "PipelineII": "1",
-                    "PipelineDepth": "46"
+                    "PipelineDepth": "56"
                   },
                   {
                     "Name": "FastDetectorisFeature_label3",
                     "TripCount": "",
-                    "LatencyMin": "56",
-                    "LatencyMax": "60",
-                    "Latency": "56 ~ 60",
+                    "LatencyMin": "66",
+                    "LatencyMax": "70",
+                    "Latency": "66 ~ 70",
                     "PipelineII": "1",
-                    "PipelineDepth": "46"
+                    "PipelineDepth": "56"
                   }
                 ]
               }
@@ -733,33 +732,33 @@
           }
         ],
         "Area": {
-          "BRAM_18K": "80",
-          "DSP48E": "13",
-          "FF": "6683",
-          "LUT": "12581"
+          "BRAM_18K": "60",
+          "DSP48E": "0",
+          "FF": "9255",
+          "LUT": "10857"
         }
       },
       "fastCorner": {
         "Latency": {
-          "LatencyBest": "3",
-          "LatencyAvg": "30660",
-          "LatencyWorst": "246323",
-          "PipelineIIMin": "3",
-          "PipelineIIMax": "246323",
-          "PipelineII": "3 ~ 246323",
+          "LatencyBest": "13",
+          "LatencyAvg": "21578",
+          "LatencyWorst": "289020",
+          "PipelineIIMin": "13",
+          "PipelineIIMax": "289020",
+          "PipelineII": "13 ~ 289020",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.63"
+          "Estimate": "9.28"
         },
         "Area": {
-          "BRAM_18K": "80",
-          "DSP48E": "13",
-          "FF": "6735",
-          "LUT": "12652"
+          "BRAM_18K": "60",
+          "DSP48E": "0",
+          "FF": "9307",
+          "LUT": "10928"
         }
       },
       "feedbackWrapperAndOu": {
@@ -785,89 +784,89 @@
       },
       "dataflow_in_loop_par": {
         "Latency": {
-          "LatencyBest": "4",
-          "LatencyAvg": "30661",
-          "LatencyWorst": "246324",
-          "PipelineIIMin": "4",
-          "PipelineIIMax": "246324",
-          "PipelineII": "4 ~ 246324",
+          "LatencyBest": "14",
+          "LatencyAvg": "21579",
+          "LatencyWorst": "289021",
+          "PipelineIIMin": "14",
+          "PipelineIIMax": "289021",
+          "PipelineII": "14 ~ 289021",
           "PipelineDepth": "",
           "PipelineType": "dataflow"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.63"
+          "Estimate": "9.28"
         },
         "Area": {
-          "BRAM_18K": "80",
-          "DSP48E": "13",
-          "FF": "6916",
-          "LUT": "13107"
+          "BRAM_18K": "60",
+          "DSP48E": "0",
+          "FF": "9488",
+          "LUT": "11383"
         }
       },
       "dataflow_parent_loop_1": {
         "Latency": {
-          "LatencyBest": "6",
-          "LatencyAvg": "153305002",
-          "LatencyWorst": "2463240002",
-          "PipelineIIMin": "6",
-          "PipelineIIMax": "2463240002",
-          "PipelineII": "6 ~ 2463240002",
+          "LatencyBest": "16",
+          "LatencyAvg": "107895002",
+          "LatencyWorst": "2890210002",
+          "PipelineIIMin": "16",
+          "PipelineIIMax": "2890210002",
+          "PipelineII": "16 ~ 2890210002",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.63"
+          "Estimate": "9.28"
         },
         "Loops": [{
             "Name": "parseEventsLoop",
             "TripCount": "",
-            "LatencyMin": "5",
-            "LatencyMax": "2463240001",
-            "Latency": "5 ~ 2463240001",
+            "LatencyMin": "15",
+            "LatencyMax": "2890210001",
+            "Latency": "15 ~ 2890210001",
             "PipelineII": "",
-            "PipelineDepthMin": "5",
-            "PipelineDepthMax": "2463240001",
-            "PipelineDepth": "5 ~ 2463240001"
+            "PipelineDepthMin": "15",
+            "PipelineDepthMax": "2890210001",
+            "PipelineDepth": "15 ~ 2890210001"
           }],
         "Area": {
-          "BRAM_18K": "80",
-          "DSP48E": "13",
-          "FF": "6950",
-          "LUT": "13171"
+          "BRAM_18K": "60",
+          "DSP48E": "0",
+          "FF": "9522",
+          "LUT": "11447"
         }
       },
       "parseEvents": {
         "Latency": {
-          "LatencyBest": "8",
-          "LatencyAvg": "153305004",
-          "LatencyWorst": "2463240004",
-          "PipelineIIMin": "9",
-          "PipelineIIMax": "2463240005",
-          "PipelineII": "9 ~ 2463240005",
+          "LatencyBest": "18",
+          "LatencyAvg": "107895004",
+          "LatencyWorst": "2890210004",
+          "PipelineIIMin": "19",
+          "PipelineIIMax": "2890210005",
+          "PipelineII": "19 ~ 2890210005",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.63"
+          "Estimate": "9.28"
         },
         "Area": {
-          "BRAM_18K": "80",
-          "DSP48E": "13",
-          "FF": "7076",
-          "LUT": "13281"
+          "BRAM_18K": "60",
+          "DSP48E": "0",
+          "FF": "9648",
+          "LUT": "11557"
         }
       }
     }
   },
   "GenData": {
     "DataVersion": "0.1",
-    "Time": "2019-03-13 16:23:10 CET",
+    "Time": "2019-03-13 17:24:03 CET",
     "ToolName": "vivado_hls",
     "ToolVersion": "2018.1"
   }

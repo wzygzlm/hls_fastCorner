@@ -107,14 +107,22 @@
         <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_sae_matrix" functionLabel="">
             <pragma name="PIPELINE"/>
         </directive>
-        <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_reset_sae2zero" functionLabel="">
-            <pragma name="PIPELINE"/>
-        </directive>
         <directive functionName="FastDetectorisFeature" label="" functionLabel="">
             <pragma name="RESOURCE">
                 <option name="variable" value="sae_" positionalBoolean="4"/>
                 <option name="core" value="RAM_T2P_BRAM"/>
             </pragma>
+        </directive>
+        <directive functionName="FastDetectorisFeature" label="" functionLabel="">
+            <pragma name="ARRAY_PARTITION">
+                <option name="variable" value="sae_" positionalBoolean="4"/>
+                <option name="cyclic" value="" positionalBoolean="type"/>
+                <option name="factor" value="3"/>
+                <option name="dim" value="3"/>
+            </pragma>
+        </directive>
+        <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_reset_sae2zero_inner" functionLabel="">
+            <pragma name="PIPELINE"/>
         </directive>
     </sourceFile>
 </AutoPilot:ProjectResources>

@@ -55,7 +55,7 @@
         </SimFlow>
     </Simulation>
     <name>
-        <value string="solution2"/>
+        <value string="solution4"/>
     </name>
     <project>
         <value string="hls_fastCorner"/>

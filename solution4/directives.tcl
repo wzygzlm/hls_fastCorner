@@ -22,5 +22,6 @@ set_directive_pipeline -rewind "FastDetectorisFeature/FastDetectorisFeature_labe
 set_directive_pipeline -rewind "FastDetectorisFeature/FastDetectorisFeature_label1"
 set_directive_unroll "FastDetectorisFeature/FastDetectorisFeature_label0"
 set_directive_pipeline "FastDetectorisFeature/FastDetectorisFeature_sae_matrix"
-set_directive_pipeline "FastDetectorisFeature/FastDetectorisFeature_reset_sae2zero"
 set_directive_resource -core RAM_T2P_BRAM "FastDetectorisFeature" sae_
+set_directive_array_partition -type cyclic -factor 3 -dim 3 "FastDetectorisFeature" sae_
+set_directive_pipeline "FastDetectorisFeature/FastDetectorisFeature_reset_sae2zero_inner"
