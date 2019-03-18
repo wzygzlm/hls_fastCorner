@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <autopilotfilemapping:AutoPilotFileMapping xmlns:autopilotfilemapping="www.autoesl.com/autopilotfilemapping">
   <source>
-    <originFiles name="fast_detector.cpp" path="E:\xfOpenCV\hls_2018_1\hls_fastCorner\src\fast_detector.cpp"/>
     <originFiles name="fast_detector.h" path="E:\xfOpenCV\hls_2018_1\hls_fastCorner\src\fast_detector.h"/>
+    <originFiles name="fast_detector.cpp" path="E:\xfOpenCV\hls_2018_1\hls_fastCorner\src\fast_detector.cpp"/>
   </source>
   <testbench>
     <originFiles name="mainapp.cpp" path="E:\xfOpenCV\hls_2018_1\hls_fastCorner\src\mainapp.cpp"/>

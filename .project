@@ -77,11 +77,6 @@
 			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution1/script.tcl</location>
 		</link>
 		<link>
-			<name>solution2/constraints/.xml.directive</name>
-			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/solution2.directive</location>
-		</link>
-		<link>
 			<name>solution2/constraints/directives.tcl</name>
 			<type>1</type>
 			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/directives.tcl</location>
