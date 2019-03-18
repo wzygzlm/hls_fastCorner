@@ -21,6 +21,42 @@
                 <option name="port" value="eventSlice" positionalBoolean="4"/>
             </pragma>
         </directive>
+        <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_label3" functionLabel="">
+            <pragma name="LOOP_TRIPCOUNT">
+                <option name="min" value="12"/>
+                <option name="max" value="16"/>
+            </pragma>
+        </directive>
+        <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_label4" functionLabel="">
+            <pragma name="LOOP_TRIPCOUNT">
+                <option name="min" value="4"/>
+                <option name="max" value="8"/>
+            </pragma>
+        </directive>
+        <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_label5" functionLabel="">
+            <pragma name="LOOP_TRIPCOUNT">
+                <option name="min" value="5"/>
+                <option name="max" value="5"/>
+            </pragma>
+        </directive>
+        <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_label0" functionLabel="">
+            <pragma name="LOOP_TRIPCOUNT">
+                <option name="min" value="10"/>
+                <option name="max" value="13"/>
+            </pragma>
+        </directive>
+        <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_label1" functionLabel="">
+            <pragma name="LOOP_TRIPCOUNT">
+                <option name="min" value="3"/>
+                <option name="max" value="6"/>
+            </pragma>
+        </directive>
+        <directive functionName="FastDetectorisFeature" label="FastDetectorisFeature_label2" functionLabel="">
+            <pragma name="LOOP_TRIPCOUNT">
+                <option name="min" value="4"/>
+                <option name="max" value="4"/>
+            </pragma>
+        </directive>
     </sourceFile>
 </AutoPilot:ProjectResources>
 

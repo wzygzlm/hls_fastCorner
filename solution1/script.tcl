@@ -5,8 +5,8 @@
 ############################################################
 open_project hls_fastCorner
 set_top parseEvents
-add_files hls_fastCorner/src/fast_detector.cpp
 add_files hls_fastCorner/src/fast_detector.h
+add_files hls_fastCorner/src/fast_detector.cpp
 add_files -tb hls_fastCorner/src/mainapp.cpp
 open_solution "solution1"
 set_part {xc7z007sclg225-1}

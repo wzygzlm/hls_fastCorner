@@ -15,14 +15,20 @@
   "HlsSolution": {"Directives": [
       "interface parseEvents {{s_axilite positionBoolean0mode} {register positionBoolean1} {port positionBooleanTextRequiredreturn}} {}",
       "interface parseEvents {{ap_fifo positionBoolean0mode} {depth 500} {port positionBooleanTextRequireddata}} {}",
-      "interface parseEvents {{ap_fifo positionBoolean0mode} {depth 500} {port positionBooleanTextRequiredeventSlice}} {}"
+      "interface parseEvents {{ap_fifo positionBoolean0mode} {depth 500} {port positionBooleanTextRequiredeventSlice}} {}",
+      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label3 {{tripcount positionBooleanCmd} {min 12} {max 16}} {}",
+      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label4 {{tripcount positionBooleanCmd} {min 4} {max 8}} {}",
+      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label5 {{tripcount positionBooleanCmd} {min 5} {max 5}} {}",
+      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label0 {{tripcount positionBooleanCmd} {min 10} {max 13}} {}",
+      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label1 {{tripcount positionBooleanCmd} {min 3} {max 6}} {}",
+      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label2 {{tripcount positionBooleanCmd} {min 4} {max 4}} {}"
     ]},
   "ClockInfo": {
     "ClockName": "ap_clk",
     "ClockPeriod": "10",
     "IsCombLogic": "0",
     "II": "x",
-    "Latency": "undef",
+    "Latency": "391",
     "Uncertainty": "1.25"
   },
   "Xdc": {"OocClocks": ["create_clock -name ap_clk -period 10.000 [get_ports ap_clk]"]},
@@ -609,10 +615,12 @@
       },
       "FastDetectorisFeatur": {
         "Latency": {
-          "LatencyBest": "",
-          "LatencyAvg": "",
-          "LatencyWorst": "",
-          "PipelineII": "",
+          "LatencyBest": "385",
+          "LatencyAvg": "134433",
+          "LatencyWorst": "1885057",
+          "PipelineIIMin": "385",
+          "PipelineIIMax": "1885057",
+          "PipelineII": "385 ~ 1885057",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
@@ -624,30 +632,40 @@
         "Loops": [{
             "Name": "isFeatureOutterLoop",
             "TripCount": "16",
-            "Latency": "",
+            "LatencyMin": "384",
+            "LatencyMax": "1885056",
+            "Latency": "384 ~ 1885056",
             "PipelineII": "",
-            "PipelineDepth": "",
+            "PipelineDepthMin": "24",
+            "PipelineDepthMax": "117816",
+            "PipelineDepth": "24 ~ 117816",
             "Loops": [
               {
                 "Name": "FastDetectorisFeature_label2",
-                "TripCount": "",
-                "Latency": "",
+                "TripCount": "4",
+                "LatencyMin": "12",
+                "LatencyMax": "1024",
+                "Latency": "12 ~ 1024",
                 "PipelineII": "",
-                "PipelineDepth": "",
+                "PipelineDepthMin": "3",
+                "PipelineDepthMax": "252",
+                "PipelineDepth": "3 ~ 252",
                 "Loops": [
                   {
                     "Name": "FastDetectorisFeature_label1",
                     "TripCount": "",
-                    "LatencyMin": "26",
-                    "LatencyMax": "65",
-                    "Latency": "26 ~ 65",
+                    "LatencyMin": "39",
+                    "LatencyMax": "78",
+                    "Latency": "39 ~ 78",
                     "PipelineII": "",
                     "PipelineDepth": "13"
                   },
                   {
                     "Name": "FastDetectorisFeature_label0",
                     "TripCount": "",
-                    "Latency": "",
+                    "LatencyMin": "120",
+                    "LatencyMax": "167",
+                    "Latency": "120 ~ 167",
                     "PipelineII": "",
                     "PipelineDepth": "12"
                   }
@@ -656,29 +674,39 @@
               {
                 "Name": "FastDetectorisFeature_label6",
                 "TripCount": "",
-                "Latency": "",
+                "LatencyMin": "22",
+                "LatencyMax": "116777",
+                "Latency": "22 ~ 116777",
                 "PipelineII": "",
-                "PipelineDepth": "",
+                "PipelineDepthMin": "22",
+                "PipelineDepthMax": "5838",
+                "PipelineDepth": "22 ~ 5838",
                 "Loops": [{
                     "Name": "FastDetectorisFeature_label5",
-                    "TripCount": "",
-                    "Latency": "",
+                    "TripCount": "5",
+                    "LatencyMin": "10",
+                    "LatencyMax": "5826",
+                    "Latency": "10 ~ 5826",
                     "PipelineII": "",
-                    "PipelineDepth": "",
+                    "PipelineDepthMin": "2",
+                    "PipelineDepthMax": "1164",
+                    "PipelineDepth": "2 ~ 1164",
                     "Loops": [
                       {
                         "Name": "FastDetectorisFeature_label4",
                         "TripCount": "",
-                        "LatencyMin": "141",
-                        "LatencyMax": "329",
-                        "Latency": "141 ~ 329",
+                        "LatencyMin": "188",
+                        "LatencyMax": "376",
+                        "Latency": "188 ~ 376",
                         "PipelineII": "",
                         "PipelineDepth": "47"
                       },
                       {
                         "Name": "FastDetectorisFeature_label3",
                         "TripCount": "",
-                        "Latency": "",
+                        "LatencyMin": "552",
+                        "LatencyMax": "781",
+                        "Latency": "552 ~ 781",
                         "PipelineII": "",
                         "PipelineDepth": "46"
                       }
@@ -696,10 +724,12 @@
       },
       "fastCorner": {
         "Latency": {
-          "LatencyBest": "",
-          "LatencyAvg": "",
-          "LatencyWorst": "",
-          "PipelineII": "",
+          "LatencyBest": "387",
+          "LatencyAvg": "134435",
+          "LatencyWorst": "1885059",
+          "PipelineIIMin": "387",
+          "PipelineIIMax": "1885059",
+          "PipelineII": "387 ~ 1885059",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
@@ -738,10 +768,12 @@
       },
       "dataflow_in_loop_par": {
         "Latency": {
-          "LatencyBest": "",
-          "LatencyAvg": "",
-          "LatencyWorst": "",
-          "PipelineII": "",
+          "LatencyBest": "388",
+          "LatencyAvg": "134436",
+          "LatencyWorst": "1885060",
+          "PipelineIIMin": "388",
+          "PipelineIIMax": "1885060",
+          "PipelineII": "388 ~ 1885060",
           "PipelineDepth": "",
           "PipelineType": "dataflow"
         },
@@ -759,10 +791,12 @@
       },
       "dataflow_parent_loop_1": {
         "Latency": {
-          "LatencyBest": "",
-          "LatencyAvg": "",
-          "LatencyWorst": "",
-          "PipelineII": "",
+          "LatencyBest": "390",
+          "LatencyAvg": "672180002",
+          "LatencyWorst": "18850600002",
+          "PipelineIIMin": "390",
+          "PipelineIIMax": "18850600002",
+          "PipelineII": "390 ~ 18850600002",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
@@ -774,9 +808,13 @@
         "Loops": [{
             "Name": "parseEventsLoop",
             "TripCount": "",
-            "Latency": "",
+            "LatencyMin": "389",
+            "LatencyMax": "18850600001",
+            "Latency": "389 ~ 18850600001",
             "PipelineII": "",
-            "PipelineDepth": ""
+            "PipelineDepthMin": "389",
+            "PipelineDepthMax": "18850600001",
+            "PipelineDepth": "389 ~ 18850600001"
           }],
         "Area": {
           "BRAM_18K": "72",
@@ -787,10 +825,12 @@
       },
       "parseEvents": {
         "Latency": {
-          "LatencyBest": "",
-          "LatencyAvg": "",
-          "LatencyWorst": "",
-          "PipelineII": "",
+          "LatencyBest": "391",
+          "LatencyAvg": "672180003",
+          "LatencyWorst": "18850600003",
+          "PipelineIIMin": "392",
+          "PipelineIIMax": "18850600004",
+          "PipelineII": "392 ~ 18850600004",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
@@ -810,7 +850,7 @@
   },
   "GenData": {
     "DataVersion": "0.1",
-    "Time": "2019-03-18 16:55:33 CET",
+    "Time": "2019-03-18 17:09:43 +0100",
     "ToolName": "vivado_hls",
     "ToolVersion": "2018.1"
   }
