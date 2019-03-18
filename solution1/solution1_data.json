@@ -49,7 +49,6 @@
       "impl\/vhdl\/FastDetectorisFeafYi.vhd",
       "impl\/vhdl\/FastDetectorisFeatur.vhd",
       "impl\/vhdl\/feedbackWrapperAndOu.vhd",
-      "impl\/vhdl\/feedbackWrapperAnncg.vhd",
       "impl\/vhdl\/fifo_w6_d2_A.vhd",
       "impl\/vhdl\/fifo_w8_d2_A.vhd",
       "impl\/vhdl\/fifo_w15_d2_S.vhd",
@@ -65,8 +64,8 @@
       "impl\/vhdl\/parseEvents_mac_mjbC.vhd",
       "impl\/vhdl\/parseEvents_srem_ibs.vhd",
       "impl\/vhdl\/parseEvents_uitodhbi.vhd",
-      "impl\/vhdl\/start_for_fastCorocq.vhd",
-      "impl\/vhdl\/start_for_feedbacpcA.vhd",
+      "impl\/vhdl\/start_for_fastCorncg.vhd",
+      "impl\/vhdl\/start_for_feedbacocq.vhd",
       "impl\/vhdl\/parseEvents.vhd"
     ],
     "Verilog": [
@@ -85,8 +84,6 @@
       "impl\/verilog\/FastDetectorisFeafYi_rom.dat",
       "impl\/verilog\/FastDetectorisFeatur.v",
       "impl\/verilog\/feedbackWrapperAndOu.v",
-      "impl\/verilog\/feedbackWrapperAnncg.v",
-      "impl\/verilog\/feedbackWrapperAnncg_ram.dat",
       "impl\/verilog\/fifo_w6_d2_A.v",
       "impl\/verilog\/fifo_w8_d2_A.v",
       "impl\/verilog\/fifo_w15_d2_S.v",
@@ -102,8 +99,8 @@
       "impl\/verilog\/parseEvents_mac_mjbC.v",
       "impl\/verilog\/parseEvents_srem_ibs.v",
       "impl\/verilog\/parseEvents_uitodhbi.v",
-      "impl\/verilog\/start_for_fastCorocq.v",
-      "impl\/verilog\/start_for_feedbacpcA.v",
+      "impl\/verilog\/start_for_fastCorncg.v",
+      "impl\/verilog\/start_for_feedbacocq.v",
       "impl\/verilog\/parseEvents.v"
     ],
     "SwDriver": [
@@ -549,7 +546,7 @@
     "eventSlice": {
       "interfaceRef": "eventSlice",
       "dir": "out",
-      "firstOutLatency": "1"
+      "firstOutLatency": "0"
     },
     "outLed_V": {
       "interfaceRef": "outLed_V",
@@ -563,7 +560,7 @@
       "ModuleName": "parseEvents",
       "Instances": [{
           "ModuleName": "dataflow_parent_loop_1",
-          "InstanceName": "grp_dataflow_parent_loop_1_fu_146",
+          "InstanceName": "grp_dataflow_parent_loop_1_fu_142",
           "Instances": [{
               "ModuleName": "dataflow_in_loop_par",
               "InstanceName": "dataflow_in_loop_par_U0",
@@ -577,12 +574,12 @@
                     }]
                 },
                 {
-                  "ModuleName": "feedbackWrapperAndOu",
-                  "InstanceName": "feedbackWrapperAndOu_U0"
-                },
-                {
                   "ModuleName": "getXandY",
                   "InstanceName": "getXandY_U0"
+                },
+                {
+                  "ModuleName": "feedbackWrapperAndOu",
+                  "InstanceName": "feedbackWrapperAndOu_U0"
                 }
               ]
             }]
@@ -720,21 +717,21 @@
       },
       "feedbackWrapperAndOu": {
         "Latency": {
-          "LatencyBest": "1",
-          "LatencyAvg": "1",
-          "LatencyWorst": "1",
-          "PipelineII": "1",
+          "LatencyBest": "0",
+          "LatencyAvg": "0",
+          "LatencyWorst": "0",
+          "PipelineII": "0",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "6.93"
+          "Estimate": "7.27"
         },
         "Area": {
-          "FF": "74",
-          "LUT": "149",
+          "FF": "2",
+          "LUT": "56",
           "BRAM_18K": "0",
           "DSP48E": "0"
         }
@@ -756,8 +753,8 @@
         "Area": {
           "BRAM_18K": "72",
           "DSP48E": "13",
-          "FF": "2553",
-          "LUT": "4805"
+          "FF": "2481",
+          "LUT": "4712"
         }
       },
       "dataflow_parent_loop_1": {
@@ -784,8 +781,8 @@
         "Area": {
           "BRAM_18K": "72",
           "DSP48E": "13",
-          "FF": "2587",
-          "LUT": "4869"
+          "FF": "2515",
+          "LUT": "4776"
         }
       },
       "parseEvents": {
@@ -805,15 +802,15 @@
         "Area": {
           "BRAM_18K": "72",
           "DSP48E": "13",
-          "FF": "2644",
-          "LUT": "4946"
+          "FF": "2572",
+          "LUT": "4853"
         }
       }
     }
   },
   "GenData": {
     "DataVersion": "0.1",
-    "Time": "2019-03-18 16:05:48 +0100",
+    "Time": "2019-03-18 16:55:33 CET",
     "ToolName": "vivado_hls",
     "ToolVersion": "2018.1"
   }

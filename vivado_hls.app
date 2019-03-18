@@ -6,8 +6,8 @@
     </Simulation>
     <files xmlns="">
         <file name="../src/mainapp.cpp" sc="0" tb="1" cflags=" "/>
-        <file name="hls_fastCorner/src/fast_detector.cpp" sc="0" tb="false" cflags=""/>
         <file name="hls_fastCorner/src/fast_detector.h" sc="0" tb="false" cflags=""/>
+        <file name="hls_fastCorner/src/fast_detector.cpp" sc="0" tb="false" cflags=""/>
     </files>
     <solutions xmlns="">
         <solution name="solution2" status="inactive"/>

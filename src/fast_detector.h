@@ -50,12 +50,12 @@ typedef ap_uint<6 * (2 * SEARCH_DISTANCE + 1)> apUint42_t;
 #define BLOCK_COL_PIXELS BITS_PER_PIXEL * (BLOCK_SIZE + 2 * SEARCH_DISTANCE)
 #define PIXS_PER_COL (SLICE_HEIGHT/COMBINED_PIXELS)
 
-void readBlockCols(ap_uint<8> x, ap_uint<8> y, sliceIdx_t sliceIdxRef, sliceIdx_t sliceIdxTag, pix_t refCol[BLOCK_SIZE + 2 * SEARCH_DISTANCE]);
-
-void writePix(ap_uint<8> x, ap_uint<8> y, sliceIdx_t sliceIdx);
-pix_t readPix(ap_uint<8> x, ap_uint<8> y, sliceIdx_t sliceIdx);
-
-void topHW(ap_uint<8> x, ap_uint<8> y, sliceIdx_t idx, ap_int<16> *miniSumRet);
+//void readBlockCols(ap_uint<8> x, ap_uint<8> y, sliceIdx_t sliceIdxRef, sliceIdx_t sliceIdxTag, pix_t refCol[BLOCK_SIZE + 2 * SEARCH_DISTANCE]);
+//
+//void writePix(ap_uint<8> x, ap_uint<8> y, sliceIdx_t sliceIdx);
+//pix_t readPix(ap_uint<8> x, ap_uint<8> y, sliceIdx_t sliceIdx);
+//
+//void topHW(ap_uint<8> x, ap_uint<8> y, sliceIdx_t idx, ap_int<16> *miniSumRet);
 
 void parseEvents(const uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlice, ap_uint<1> *outLed);
 

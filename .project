@@ -29,62 +29,62 @@
 		<link>
 			<name>source</name>
 			<type>2</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/.apc/.src</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/.apc/.src</location>
 		</link>
 		<link>
 			<name>testbench</name>
 			<type>2</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/.apc/.tb</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/.apc/.tb</location>
 		</link>
 		<link>
 			<name>solution1/constraints</name>
 			<type>2</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution1/.tcls</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/solution1/.tcls</location>
 		</link>
 		<link>
 			<name>solution2/constraints</name>
 			<type>2</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/.tcls</location>
+			<location>/home/minliu/E::/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/.tcls</location>
 		</link>
 		<link>
 			<name>source/fast_detector.cpp</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/fast_detector.cpp</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/src/fast_detector.cpp</location>
 		</link>
 		<link>
 			<name>source/fast_detector.h</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/fast_detector.h</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/src/fast_detector.h</location>
 		</link>
 		<link>
 			<name>testbench/mainapp.cpp</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/mainapp.cpp</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/src/mainapp.cpp</location>
 		</link>
 		<link>
 			<name>solution1/constraints/.xml.directive</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution1/solution1.directive</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/solution1/solution1.directive</location>
 		</link>
 		<link>
 			<name>solution1/constraints/directives.tcl</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution1/directives.tcl</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/solution1/directives.tcl</location>
 		</link>
 		<link>
 			<name>solution1/constraints/script.tcl</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution1/script.tcl</location>
+			<location>/home/minliu/github_prjs/hls_abmof/hls_fastCorner/solution1/script.tcl</location>
 		</link>
 		<link>
 			<name>solution2/constraints/directives.tcl</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/directives.tcl</location>
+			<location>/home/minliu/E::/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/directives.tcl</location>
 		</link>
 		<link>
 			<name>solution2/constraints/script.tcl</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/script.tcl</location>
+			<location>/home/minliu/E::/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/script.tcl</location>
 		</link>
 	</linkedResources>
 </projectDescription>
