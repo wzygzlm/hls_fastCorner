@@ -4,7 +4,7 @@
   "RtlPrefix": "",
   "SourceLanguage": "cpp",
   "ResetStyle": "control",
-  "GenerateBdFiles": "1",
+  "GenerateBdFiles": "0",
   "HostMachineBits": "64",
   "Target": {
     "Family": "zynq",
@@ -13,35 +13,16 @@
     "Speed": "-1"
   },
   "HlsSolution": {"Directives": [
-      "loop_tripcount FastDetector::isFeature\/isFeatureOutterLoop {{tripcount positionBooleanCmd} {min 16} {max 16}} {}",
-      "interface FastDetectorisFeature {{ap_ctrl_hs positionBoolean0mode} {port positionBooleanTextRequiredreturn}} {}",
-      "interface parseEvents {{ap_fifo positionBoolean0mode} {depth 500} {port positionBooleanTextRequireddata}} {}",
       "interface parseEvents {{s_axilite positionBoolean0mode} {register positionBoolean1} {port positionBooleanTextRequiredreturn}} {}",
-      "interface parseEvents {{axis positionBoolean0mode} {register positionBoolean1} {both positionBoolean0register_mode} {depth 500} {port positionBooleanTextRequiredeventSlice}} {}",
-      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label0 {{tripcount positionBooleanCmd} {min 16} {max 16}} {}",
-      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label1 {{tripcount positionBooleanCmd} {min 3} {max 6}} {}",
-      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label2 {{tripcount positionBooleanCmd} {min 4} {max 4}} {}",
-      "loop_tripcount FastDetectorisFeature\/isFeatureOutterLoop {{tripcount positionBooleanCmd} {min 16} {max 16}} {}",
-      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label3 {{tripcount positionBooleanCmd} {min 12} {max 16}} {}",
-      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label4 {{tripcount positionBooleanCmd} {min 3} {max 7}} {}",
-      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label5 {{tripcount positionBooleanCmd} {min 5} {max 5}} {}",
-      "loop_tripcount FastDetectorisFeature\/FastDetectorisFeature_label6 {{tripcount positionBooleanCmd} {min 20} {max 20}} {}",
-      "pipeline FastDetectorisFeature\/FastDetectorisFeature_label0 {{rewind positionBoolean1}} {}",
-      "pipeline FastDetectorisFeature\/FastDetectorisFeature_label3 {} {}",
-      "pipeline FastDetectorisFeature\/FastDetectorisFeature_label4 {{rewind positionBoolean1}} {}",
-      "pipeline FastDetectorisFeature\/FastDetectorisFeature_label1 {{rewind positionBoolean1}} {}",
-      "unroll FastDetectorisFeature\/FastDetectorisFeature_label0 {} {}",
-      "pipeline FastDetectorisFeature\/FastDetectorisFeature_sae_matrix {} {}",
-      "resource FastDetectorisFeature {{variable positionBooleanTextRequiredsae_} {core RAM_T2P_BRAM}} {}",
-      "array_partition FastDetectorisFeature {{partition positionBooleanCmd} {variable positionBooleanTextRequiredsae_} {cyclic positionBoolean0type} {factor 3} {dim 3}} {}",
-      "pipeline FastDetectorisFeature\/FastDetectorisFeature_reset_sae2zero_inner {} {}"
+      "interface parseEvents {{ap_fifo positionBoolean0mode} {depth 500} {port positionBooleanTextRequireddata}} {}",
+      "interface parseEvents {{ap_fifo positionBoolean0mode} {depth 500} {port positionBooleanTextRequiredeventSlice}} {}"
     ]},
   "ClockInfo": {
     "ClockName": "ap_clk",
     "ClockPeriod": "10",
     "IsCombLogic": "0",
     "II": "x",
-    "Latency": "18",
+    "Latency": "undef",
     "Uncertainty": "1.25"
   },
   "Xdc": {"OocClocks": ["create_clock -name ap_clk -period 10.000 [get_ports ap_clk]"]},
@@ -56,19 +37,19 @@
     "Taxonomy": "\/VIVADO_HLS_IP"
   },
   "Files": {
-    "CSource": ["..\/..\/fastFPGA_hls\/src\/fast_detector.cpp"],
+    "CSource": ["..\/src\/fast_detector.cpp"],
     "Vhdl": [
       "impl\/vhdl\/dataflow_in_loop_par.vhd",
       "impl\/vhdl\/dataflow_parent_loop_1.vhd",
       "impl\/vhdl\/fastCorner.vhd",
       "impl\/vhdl\/FastDetectorisFeabkb.vhd",
+      "impl\/vhdl\/FastDetectorisFeacud.vhd",
+      "impl\/vhdl\/FastDetectorisFeadEe.vhd",
       "impl\/vhdl\/FastDetectorisFeaeOg.vhd",
       "impl\/vhdl\/FastDetectorisFeafYi.vhd",
-      "impl\/vhdl\/FastDetectorisFeag8j.vhd",
-      "impl\/vhdl\/FastDetectorisFeahbi.vhd",
-      "impl\/vhdl\/FastDetectorisFeatur_2.vhd",
+      "impl\/vhdl\/FastDetectorisFeatur.vhd",
       "impl\/vhdl\/feedbackWrapperAndOu.vhd",
-      "impl\/vhdl\/feedbackWrapperAnqcK.vhd",
+      "impl\/vhdl\/feedbackWrapperAnncg.vhd",
       "impl\/vhdl\/fifo_w6_d2_A.vhd",
       "impl\/vhdl\/fifo_w8_d2_A.vhd",
       "impl\/vhdl\/fifo_w15_d2_S.vhd",
@@ -76,17 +57,16 @@
       "impl\/vhdl\/fifo_w17_d2_S.vhd",
       "impl\/vhdl\/fifo_w32_d2_A.vhd",
       "impl\/vhdl\/getXandY.vhd",
+      "impl\/vhdl\/parseEvents_ama_akbM.vhd",
+      "impl\/vhdl\/parseEvents_ama_albW.vhd",
+      "impl\/vhdl\/parseEvents_ama_amb6.vhd",
       "impl\/vhdl\/parseEvents_AXILiteS_s_axi.vhd",
-      "impl\/vhdl\/parseEvents_dcmp_ibs.vhd",
-      "impl\/vhdl\/parseEvents_mux_3mb6.vhd",
-      "impl\/vhdl\/parseEvents_srem_pcA.vhd",
-      "impl\/vhdl\/parseEvents_uitodjbC.vhd",
-      "impl\/vhdl\/parseEvents_urem_kbM.vhd",
-      "impl\/vhdl\/parseEvents_urem_lbW.vhd",
-      "impl\/vhdl\/parseEvents_urem_ncg.vhd",
-      "impl\/vhdl\/parseEvents_urem_ocq.vhd",
-      "impl\/vhdl\/start_for_fastCorrcU.vhd",
-      "impl\/vhdl\/start_for_feedbacsc4.vhd",
+      "impl\/vhdl\/parseEvents_dcmp_g8j.vhd",
+      "impl\/vhdl\/parseEvents_mac_mjbC.vhd",
+      "impl\/vhdl\/parseEvents_srem_ibs.vhd",
+      "impl\/vhdl\/parseEvents_uitodhbi.vhd",
+      "impl\/vhdl\/start_for_fastCorocq.vhd",
+      "impl\/vhdl\/start_for_feedbacpcA.vhd",
       "impl\/vhdl\/parseEvents.vhd"
     ],
     "Verilog": [
@@ -95,18 +75,18 @@
       "impl\/verilog\/fastCorner.v",
       "impl\/verilog\/FastDetectorisFeabkb.v",
       "impl\/verilog\/FastDetectorisFeabkb_ram.dat",
+      "impl\/verilog\/FastDetectorisFeacud.v",
+      "impl\/verilog\/FastDetectorisFeacud_rom.dat",
+      "impl\/verilog\/FastDetectorisFeadEe.v",
+      "impl\/verilog\/FastDetectorisFeadEe_rom.dat",
       "impl\/verilog\/FastDetectorisFeaeOg.v",
       "impl\/verilog\/FastDetectorisFeaeOg_rom.dat",
       "impl\/verilog\/FastDetectorisFeafYi.v",
       "impl\/verilog\/FastDetectorisFeafYi_rom.dat",
-      "impl\/verilog\/FastDetectorisFeag8j.v",
-      "impl\/verilog\/FastDetectorisFeag8j_rom.dat",
-      "impl\/verilog\/FastDetectorisFeahbi.v",
-      "impl\/verilog\/FastDetectorisFeahbi_rom.dat",
-      "impl\/verilog\/FastDetectorisFeatur_2.v",
+      "impl\/verilog\/FastDetectorisFeatur.v",
       "impl\/verilog\/feedbackWrapperAndOu.v",
-      "impl\/verilog\/feedbackWrapperAnqcK.v",
-      "impl\/verilog\/feedbackWrapperAnqcK_ram.dat",
+      "impl\/verilog\/feedbackWrapperAnncg.v",
+      "impl\/verilog\/feedbackWrapperAnncg_ram.dat",
       "impl\/verilog\/fifo_w6_d2_A.v",
       "impl\/verilog\/fifo_w8_d2_A.v",
       "impl\/verilog\/fifo_w15_d2_S.v",
@@ -114,17 +94,16 @@
       "impl\/verilog\/fifo_w17_d2_S.v",
       "impl\/verilog\/fifo_w32_d2_A.v",
       "impl\/verilog\/getXandY.v",
+      "impl\/verilog\/parseEvents_ama_akbM.v",
+      "impl\/verilog\/parseEvents_ama_albW.v",
+      "impl\/verilog\/parseEvents_ama_amb6.v",
       "impl\/verilog\/parseEvents_AXILiteS_s_axi.v",
-      "impl\/verilog\/parseEvents_dcmp_ibs.v",
-      "impl\/verilog\/parseEvents_mux_3mb6.v",
-      "impl\/verilog\/parseEvents_srem_pcA.v",
-      "impl\/verilog\/parseEvents_uitodjbC.v",
-      "impl\/verilog\/parseEvents_urem_kbM.v",
-      "impl\/verilog\/parseEvents_urem_lbW.v",
-      "impl\/verilog\/parseEvents_urem_ncg.v",
-      "impl\/verilog\/parseEvents_urem_ocq.v",
-      "impl\/verilog\/start_for_fastCorrcU.v",
-      "impl\/verilog\/start_for_feedbacsc4.v",
+      "impl\/verilog\/parseEvents_dcmp_g8j.v",
+      "impl\/verilog\/parseEvents_mac_mjbC.v",
+      "impl\/verilog\/parseEvents_srem_ibs.v",
+      "impl\/verilog\/parseEvents_uitodhbi.v",
+      "impl\/verilog\/start_for_fastCorocq.v",
+      "impl\/verilog\/start_for_feedbacpcA.v",
       "impl\/verilog\/parseEvents.v"
     ],
     "SwDriver": [
@@ -163,7 +142,7 @@
     "ap_clk": {
       "type": "clock",
       "ctype": {"CLK": {"Type": "bool"}},
-      "buses": "s_axi_AXILiteS eventSlice",
+      "buses": "s_axi_AXILiteS",
       "reset": "ap_rst_n"
     },
     "ap_rst_n": {
@@ -185,19 +164,17 @@
       }
     },
     "eventSlice": {
-      "type": "axi4stream",
-      "mode": "master",
-      "port_prefix": "eventSlice",
-      "has_tready": "1",
+      "type": "ap_fifo",
+      "fifo_width": "32",
+      "fifo_type": "write",
       "ctype": {
-        "TDATA": {
+        "WR_DATA": {
           "Type": "integer unsigned",
           "Width": "32"
         },
-        "TVALID": {"Type": "bool"},
-        "TREADY": {"Type": "bool"}
-      },
-      "port_width": {"TDATA": "32"}
+        "FULL_N": {"Type": "bool"},
+        "WR_EN": {"Type": "bool"}
+      }
     },
     "eventsArraySize": {
       "type": "data",
@@ -535,16 +512,16 @@
       "dir": "in",
       "width": "32"
     },
-    "eventSlice_TDATA": {
+    "eventSlice_din": {
       "dir": "out",
       "width": "32"
     },
-    "eventSlice_TVALID": {
-      "dir": "out",
+    "eventSlice_full_n": {
+      "dir": "in",
       "width": "1"
     },
-    "eventSlice_TREADY": {
-      "dir": "in",
+    "eventSlice_write": {
+      "dir": "out",
       "width": "1"
     },
     "outLed_V": {
@@ -586,7 +563,7 @@
       "ModuleName": "parseEvents",
       "Instances": [{
           "ModuleName": "dataflow_parent_loop_1",
-          "InstanceName": "grp_dataflow_parent_loop_1_fu_86",
+          "InstanceName": "grp_dataflow_parent_loop_1_fu_146",
           "Instances": [{
               "ModuleName": "dataflow_in_loop_par",
               "InstanceName": "dataflow_in_loop_par_U0",
@@ -595,8 +572,8 @@
                   "ModuleName": "fastCorner",
                   "InstanceName": "fastCorner_U0",
                   "Instances": [{
-                      "ModuleName": "FastDetectorisFeatur_2",
-                      "InstanceName": "grp_FastDetectorisFeatur_2_fu_94"
+                      "ModuleName": "FastDetectorisFeatur",
+                      "InstanceName": "grp_FastDetectorisFeatur_fu_146"
                     }]
                 },
                 {
@@ -633,140 +610,120 @@
           "DSP48E": "0"
         }
       },
-      "FastDetectorisFeatur_2": {
+      "FastDetectorisFeatur": {
         "Latency": {
-          "LatencyBest": "12",
-          "LatencyAvg": "21577",
-          "LatencyWorst": "289019",
-          "PipelineIIMin": "12",
-          "PipelineIIMax": "289019",
-          "PipelineII": "12 ~ 289019",
+          "LatencyBest": "",
+          "LatencyAvg": "",
+          "LatencyWorst": "",
+          "PipelineII": "",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.28"
+          "Estimate": "9.63"
         },
-        "Loops": [
-          {
-            "Name": "FastDetectorisFeature_reset_sae2zero_FastDetectorisFeature_reset_sae2zero_inner",
-            "TripCount": "7200",
-            "Latency": "7201",
-            "PipelineII": "1",
-            "PipelineDepth": "3"
-          },
-          {
+        "Loops": [{
             "Name": "isFeatureOutterLoop",
             "TripCount": "16",
-            "LatencyMin": "943",
-            "LatencyMax": "289007",
-            "Latency": "943 ~ 289007",
+            "Latency": "",
             "PipelineII": "",
-            "PipelineDepthMin": "59",
-            "PipelineDepthMax": "18063",
-            "PipelineDepth": "59 ~ 18063",
+            "PipelineDepth": "",
             "Loops": [
               {
                 "Name": "FastDetectorisFeature_label2",
-                "TripCount": "4",
-                "LatencyMin": "56",
-                "LatencyMax": "459",
-                "Latency": "56 ~ 459",
+                "TripCount": "",
+                "Latency": "",
                 "PipelineII": "",
-                "PipelineDepthMin": "14",
-                "PipelineDepthMax": "96",
-                "PipelineDepth": "14 ~ 96",
+                "PipelineDepth": "",
                 "Loops": [
                   {
                     "Name": "FastDetectorisFeature_label1",
                     "TripCount": "",
-                    "LatencyMin": "23",
-                    "LatencyMax": "26",
-                    "Latency": "23 ~ 26",
-                    "PipelineII": "1",
-                    "PipelineDepth": "22"
+                    "LatencyMin": "26",
+                    "LatencyMax": "65",
+                    "Latency": "26 ~ 65",
+                    "PipelineII": "",
+                    "PipelineDepth": "13"
                   },
                   {
                     "Name": "FastDetectorisFeature_label0",
-                    "TripCount": "16",
-                    "Latency": "36",
-                    "PipelineII": "1",
-                    "PipelineDepth": "22"
+                    "TripCount": "",
+                    "Latency": "",
+                    "PipelineII": "",
+                    "PipelineDepth": "12"
                   }
                 ]
               },
               {
-                "Name": "FastDetectorisFeature_label6_FastDetectorisFeature_label5",
-                "TripCount": "100",
-                "LatencyMin": "2300",
-                "LatencyMax": "17598",
-                "Latency": "2300 ~ 17598",
+                "Name": "FastDetectorisFeature_label6",
+                "TripCount": "",
+                "Latency": "",
                 "PipelineII": "",
-                "PipelineDepthMin": "23",
-                "PipelineDepthMax": "175",
-                "PipelineDepth": "23 ~ 175",
-                "Loops": [
-                  {
-                    "Name": "FastDetectorisFeature_label4",
+                "PipelineDepth": "",
+                "Loops": [{
+                    "Name": "FastDetectorisFeature_label5",
                     "TripCount": "",
-                    "LatencyMin": "57",
-                    "LatencyMax": "61",
-                    "Latency": "57 ~ 61",
-                    "PipelineII": "1",
-                    "PipelineDepth": "56"
-                  },
-                  {
-                    "Name": "FastDetectorisFeature_label3",
-                    "TripCount": "",
-                    "LatencyMin": "66",
-                    "LatencyMax": "70",
-                    "Latency": "66 ~ 70",
-                    "PipelineII": "1",
-                    "PipelineDepth": "56"
-                  }
-                ]
+                    "Latency": "",
+                    "PipelineII": "",
+                    "PipelineDepth": "",
+                    "Loops": [
+                      {
+                        "Name": "FastDetectorisFeature_label4",
+                        "TripCount": "",
+                        "LatencyMin": "141",
+                        "LatencyMax": "329",
+                        "Latency": "141 ~ 329",
+                        "PipelineII": "",
+                        "PipelineDepth": "47"
+                      },
+                      {
+                        "Name": "FastDetectorisFeature_label3",
+                        "TripCount": "",
+                        "Latency": "",
+                        "PipelineII": "",
+                        "PipelineDepth": "46"
+                      }
+                    ]
+                  }]
               }
             ]
-          }
-        ],
+          }],
         "Area": {
-          "BRAM_18K": "60",
-          "DSP48E": "0",
-          "FF": "9255",
-          "LUT": "10857"
+          "BRAM_18K": "72",
+          "DSP48E": "13",
+          "FF": "2388",
+          "LUT": "4315"
         }
       },
       "fastCorner": {
         "Latency": {
-          "LatencyBest": "13",
-          "LatencyAvg": "21578",
-          "LatencyWorst": "289020",
-          "PipelineIIMin": "13",
-          "PipelineIIMax": "289020",
-          "PipelineII": "13 ~ 289020",
+          "LatencyBest": "",
+          "LatencyAvg": "",
+          "LatencyWorst": "",
+          "PipelineII": "",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.28"
+          "Estimate": "9.63"
         },
         "Area": {
-          "BRAM_18K": "60",
-          "DSP48E": "0",
-          "FF": "9307",
-          "LUT": "10928"
+          "BRAM_18K": "72",
+          "DSP48E": "13",
+          "FF": "2441",
+          "LUT": "4392"
         }
       },
       "feedbackWrapperAndOu": {
         "Latency": {
-          "LatencyBest": "2",
-          "LatencyAvg": "2",
-          "LatencyWorst": "2",
-          "PipelineII": "2",
+          "LatencyBest": "1",
+          "LatencyAvg": "1",
+          "LatencyWorst": "1",
+          "PipelineII": "1",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
@@ -776,97 +733,87 @@
           "Estimate": "6.93"
         },
         "Area": {
-          "FF": "143",
-          "LUT": "191",
+          "FF": "74",
+          "LUT": "149",
           "BRAM_18K": "0",
           "DSP48E": "0"
         }
       },
       "dataflow_in_loop_par": {
         "Latency": {
-          "LatencyBest": "14",
-          "LatencyAvg": "21579",
-          "LatencyWorst": "289021",
-          "PipelineIIMin": "14",
-          "PipelineIIMax": "289021",
-          "PipelineII": "14 ~ 289021",
+          "LatencyBest": "",
+          "LatencyAvg": "",
+          "LatencyWorst": "",
+          "PipelineII": "",
           "PipelineDepth": "",
           "PipelineType": "dataflow"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.28"
+          "Estimate": "9.63"
         },
         "Area": {
-          "BRAM_18K": "60",
-          "DSP48E": "0",
-          "FF": "9488",
-          "LUT": "11383"
+          "BRAM_18K": "72",
+          "DSP48E": "13",
+          "FF": "2553",
+          "LUT": "4805"
         }
       },
       "dataflow_parent_loop_1": {
         "Latency": {
-          "LatencyBest": "16",
-          "LatencyAvg": "107895002",
-          "LatencyWorst": "2890210002",
-          "PipelineIIMin": "16",
-          "PipelineIIMax": "2890210002",
-          "PipelineII": "16 ~ 2890210002",
+          "LatencyBest": "",
+          "LatencyAvg": "",
+          "LatencyWorst": "",
+          "PipelineII": "",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.28"
+          "Estimate": "9.63"
         },
         "Loops": [{
             "Name": "parseEventsLoop",
             "TripCount": "",
-            "LatencyMin": "15",
-            "LatencyMax": "2890210001",
-            "Latency": "15 ~ 2890210001",
+            "Latency": "",
             "PipelineII": "",
-            "PipelineDepthMin": "15",
-            "PipelineDepthMax": "2890210001",
-            "PipelineDepth": "15 ~ 2890210001"
+            "PipelineDepth": ""
           }],
         "Area": {
-          "BRAM_18K": "60",
-          "DSP48E": "0",
-          "FF": "9522",
-          "LUT": "11447"
+          "BRAM_18K": "72",
+          "DSP48E": "13",
+          "FF": "2587",
+          "LUT": "4869"
         }
       },
       "parseEvents": {
         "Latency": {
-          "LatencyBest": "18",
-          "LatencyAvg": "107895004",
-          "LatencyWorst": "2890210004",
-          "PipelineIIMin": "19",
-          "PipelineIIMax": "2890210005",
-          "PipelineII": "19 ~ 2890210005",
+          "LatencyBest": "",
+          "LatencyAvg": "",
+          "LatencyWorst": "",
+          "PipelineII": "",
           "PipelineDepth": "",
           "PipelineType": "none"
         },
         "Timing": {
           "Target": "10.00",
           "Uncertainty": "1.25",
-          "Estimate": "9.28"
+          "Estimate": "9.63"
         },
         "Area": {
-          "BRAM_18K": "60",
-          "DSP48E": "0",
-          "FF": "9648",
-          "LUT": "11557"
+          "BRAM_18K": "72",
+          "DSP48E": "13",
+          "FF": "2644",
+          "LUT": "4946"
         }
       }
     }
   },
   "GenData": {
     "DataVersion": "0.1",
-    "Time": "2019-03-13 17:24:03 CET",
+    "Time": "2019-03-18 15:37:21 +0100",
     "ToolName": "vivado_hls",
     "ToolVersion": "2018.1"
   }

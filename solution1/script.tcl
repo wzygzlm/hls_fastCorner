@@ -5,14 +5,14 @@
 ############################################################
 open_project hls_fastCorner
 set_top parseEvents
-add_files fastFPGA_hls/src/fast_detector.cpp
-add_files fastFPGA_hls/src/fast_detector.h
+add_files hls_fastCorner/src/fast_detector.cpp
+add_files hls_fastCorner/src/fast_detector.h
 add_files -tb hls_fastCorner/src/mainapp.cpp
-open_solution "solution2"
+open_solution "solution1"
 set_part {xc7z007sclg225-1}
 create_clock -period 10 -name default
-source "./hls_fastCorner/solution2/directives.tcl"
-csim_design -compiler gcc
+source "./hls_fastCorner/solution1/directives.tcl"
+csim_design
 csynth_design
 cosim_design
 export_design -format ip_catalog

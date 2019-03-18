@@ -9,7 +9,7 @@
         <schedule model="parseEvents"/>
     </config>
     <UIConfigurations>
-        <UIAutosynConf hideTrivialOp="true" isBasedOnBoard="false" isSolutionDirty="true" isStopAskAgain="false" showDetailDesignViewer="false">
+        <UIAutosynConf hideTrivialOp="true" isBasedOnBoard="false" isSolutionDirty="false" isStopAskAgain="false" showDetailDesignViewer="false">
             <Platform>xilinx/zynq/zynq</Platform>
             <Platform>xilinx/zynq/zynq_fpv6</Platform>
             <customLibs/>
@@ -55,7 +55,7 @@
         </SimFlow>
     </Simulation>
     <name>
-        <value string="solution2"/>
+        <value string="solution1"/>
     </name>
     <project>
         <value string="hls_fastCorner"/>
@@ -68,7 +68,7 @@
         <library name="DefaultPlatform" value="xilinx/zynq/zynq_fpv6"/>
     </libraryList>
     <clockList>
-        <clock default="false" name="default" period="10"/>
+        <clock name="default" default="false" period="10"/>
     </clockList>
 </solution>
 
