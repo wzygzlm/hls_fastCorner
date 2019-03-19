@@ -42,11 +42,6 @@
 			<location>C:/home/minliu/github_prjs/hls_abmof/hls_fastCorner/solution1/.tcls</location>
 		</link>
 		<link>
-			<name>solution2/constraints</name>
-			<type>2</type>
-			<location>C:/home/minliu/E::/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/.tcls</location>
-		</link>
-		<link>
 			<name>source/fast_detector.cpp</name>
 			<type>1</type>
 			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/fast_detector.cpp</location>
@@ -57,9 +52,19 @@
 			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/fast_detector.h</location>
 		</link>
 		<link>
-			<name>testbench/mainapp.cpp</name>
+			<name>source/insertion_cell_sort.h</name>
 			<type>1</type>
-			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/mainapp.cpp</location>
+			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/insertion_cell_sort.h</location>
+		</link>
+		<link>
+			<name>source/sortHW.cpp</name>
+			<type>1</type>
+			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/sortHW.cpp</location>
+		</link>
+		<link>
+			<name>testbench/sortTB.cpp</name>
+			<type>1</type>
+			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/src/sortTB.cpp</location>
 		</link>
 		<link>
 			<name>solution1/constraints/.xml.directive</name>
@@ -75,16 +80,6 @@
 			<name>solution1/constraints/script.tcl</name>
 			<type>1</type>
 			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution1/script.tcl</location>
-		</link>
-		<link>
-			<name>solution2/constraints/directives.tcl</name>
-			<type>1</type>
-			<location>C:/home/minliu/E::/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/directives.tcl</location>
-		</link>
-		<link>
-			<name>solution2/constraints/script.tcl</name>
-			<type>1</type>
-			<location>C:/home/minliu/E::/xfOpenCV/hls_2018_1/hls_fastCorner/solution2/script.tcl</location>
 		</link>
 	</linkedResources>
 </projectDescription>

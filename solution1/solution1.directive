@@ -64,6 +64,12 @@
                 <option name="dim" value="1"/>
             </pragma>
         </directive>
+        <directive functionName="insertion_sort" label="L2" functionLabel="">
+            <pragma name="LOOP_TRIPCOUNT">
+                <option name="min" value="0"/>
+                <option name="max" value="16"/>
+            </pragma>
+        </directive>
     </sourceFile>
 </AutoPilot:ProjectResources>
 

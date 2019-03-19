@@ -3,8 +3,10 @@
   <source>
     <originFiles name="fast_detector.cpp" path="/home/minliu/github_prjs/hls_abmof/hls_fastCorner/src/fast_detector.cpp"/>
     <originFiles name="fast_detector.h" path="/home/minliu/github_prjs/hls_abmof/hls_fastCorner/src/fast_detector.h"/>
+    <originFiles name="sortHW.cpp" path="E:\xfOpenCV\hls_2018_1\hls_fastCorner\src\sortHW.cpp"/>
+    <originFiles name="insertion_cell_sort.h" path="E:\xfOpenCV\hls_2018_1\hls_fastCorner\src\insertion_cell_sort.h"/>
   </source>
   <testbench>
-    <originFiles name="mainapp.cpp" path="/home/minliu/github_prjs/hls_abmof/hls_fastCorner/src/mainapp.cpp"/>
+    <originFiles name="sortTB.cpp" path="E:\xfOpenCV\hls_2018_1\hls_fastCorner\src\sortTB.cpp"/>
   </testbench>
 </autopilotfilemapping:AutoPilotFileMapping>
