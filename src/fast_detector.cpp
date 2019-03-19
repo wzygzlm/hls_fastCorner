@@ -175,9 +175,7 @@ void fastCorner(hls::stream<uint8_t>  &xInStream, hls::stream<uint8_t> &yInStrea
 ap_int<16> min(ap_int<16> inArr[2*SEARCH_DISTANCE + 1], int8_t *index)
 {
 #pragma HLS INLINE
-#pragma HLS PIPELINE
-#pragma HLS ARRAY_RESHAPE variable=inArr complete dim=1
-	ap_int<16> tmp = inArr[0];
+#pragma HLS PIPELINE	ap_int<16> tmp = inArr[0];
 	int8_t tmpIdx = 0;
 	minLoop: for(int8_t i = 0; i < 2*SEARCH_DISTANCE + 1; i++)
 	{
@@ -251,6 +249,34 @@ void feedbackWrapperAndOutputResult(hls::stream<apUint15_t> &miniSumStream, hls:
 //		std :: cout << "output is "  << std::hex << output << std :: endl;
 //		std :: cout << "eventSlice is "  << std::hex << output.to_int() << std :: endl;
 	*eventSlice++ = output.to_uint();
+}
+
+
+template<typename T_DATA, typename T_INDEX, int TOTAL_NUM, int NPC>
+// Function Description: return the minimum value of an array.
+T_DATA min(T_DATA inArr[TOTAL_NUM], T_INDEX *index)
+{
+#pragma HLS ARRAY_RESHAPE variable=inArr factor=NPC dim=1
+#pragma HLS PIPELINE#pragma HLS INLINE off
+	T_DATA tmp = inArr[0];
+	T_INDEX tmpIdx = 0;
+	minLoop: for(T_INDEX i = 0; i < TOTAL_NUM; i++)
+	{
+		// Here is a bug. Use the if-else statement,
+		// cannot use the question mark statement.
+		// Otherwise a lot of muxs will be generated,
+		// DON'T KNOW WHY. SHOULD BE A BUG.
+		if(inArr[i] < tmp) tmpIdx = i;
+		if(inArr[i] < tmp) tmp = inArr[i];
+//		tmp = (inArr[i] < tmp) ? inArr[i] : tmp;
+	}
+	*index = tmpIdx;
+	return tmp;
+}
+
+ap_uint<20> testMin(ap_uint<20> inArr[16], ap_uint<5> *index)
+{
+	return min< ap_uint<20>, ap_uint<5>, 16, 16 >(inArr, index);
 }
 
 #pragma SDS data access_pattern(data:SEQUENTIAL, eventSlice:SEQUENTIAL)

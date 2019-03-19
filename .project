@@ -69,12 +69,12 @@
 		<link>
 			<name>solution1/constraints/directives.tcl</name>
 			<type>1</type>
-			<location>C:/home/minliu/github_prjs/hls_abmof/hls_fastCorner/solution1/directives.tcl</location>
+			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution1/directives.tcl</location>
 		</link>
 		<link>
 			<name>solution1/constraints/script.tcl</name>
 			<type>1</type>
-			<location>C:/home/minliu/github_prjs/hls_abmof/hls_fastCorner/solution1/script.tcl</location>
+			<location>E:/xfOpenCV/hls_2018_1/hls_fastCorner/solution1/script.tcl</location>
 		</link>
 		<link>
 			<name>solution2/constraints/directives.tcl</name>

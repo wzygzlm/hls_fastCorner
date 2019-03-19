@@ -6,10 +6,10 @@
         <DownStreamTool name=""/>
     </downStreamTool>
     <config>
-        <schedule model="parseEvents"/>
+        <schedule model="testMin"/>
     </config>
     <UIConfigurations>
-        <UIAutosynConf hideTrivialOp="true" isBasedOnBoard="false" isSolutionDirty="false" isStopAskAgain="false" showDetailDesignViewer="false">
+        <UIAutosynConf hideTrivialOp="true" isBasedOnBoard="false" isSolutionDirty="true" isStopAskAgain="false" showDetailDesignViewer="false">
             <Platform>xilinx/zynq/zynq</Platform>
             <Platform>xilinx/zynq/zynq_fpv6</Platform>
             <customLibs/>
@@ -68,7 +68,7 @@
         <library name="DefaultPlatform" value="xilinx/zynq/zynq_fpv6"/>
     </libraryList>
     <clockList>
-        <clock name="default" default="false" period="10"/>
+        <clock default="false" name="default" period="10"/>
     </clockList>
 </solution>
 

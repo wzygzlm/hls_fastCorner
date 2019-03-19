@@ -4,7 +4,7 @@
 ## Copyright (C) 1986-2018 Xilinx, Inc. All Rights Reserved.
 ############################################################
 open_project hls_fastCorner
-set_top parseEvents
+set_top testMin
 add_files hls_fastCorner/src/fast_detector.h
 add_files hls_fastCorner/src/fast_detector.cpp
 add_files -tb hls_fastCorner/src/mainapp.cpp

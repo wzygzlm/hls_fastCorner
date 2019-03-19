@@ -57,6 +57,13 @@
                 <option name="max" value="4"/>
             </pragma>
         </directive>
+        <directive functionName="min" label="label1" functionLabel="label1">
+            <pragma name="ARRAY_RESHAPE">
+                <option name="variable" value="inArr" positionalBoolean="4"/>
+                <option name="complete" value="" positionalBoolean="type"/>
+                <option name="dim" value="1"/>
+            </pragma>
+        </directive>
     </sourceFile>
 </AutoPilot:ProjectResources>
 

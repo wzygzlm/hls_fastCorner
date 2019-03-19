@@ -12,3 +12,4 @@ set_directive_loop_tripcount -min 5 -max 5 "FastDetectorisFeature/FastDetectoris
 set_directive_loop_tripcount -min 10 -max 13 "FastDetectorisFeature/FastDetectorisFeature_label0"
 set_directive_loop_tripcount -min 3 -max 6 "FastDetectorisFeature/FastDetectorisFeature_label1"
 set_directive_loop_tripcount -min 4 -max 4 "FastDetectorisFeature/FastDetectorisFeature_label2"
+set_directive_array_reshape -type complete -dim 1 "min/label1/label1" inArr
