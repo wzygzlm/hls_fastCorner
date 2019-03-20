@@ -9,6 +9,7 @@
 #define DTYPE ap_uint<20>
 #define SIZE 16
 #define STAGES 4
+#define SYMBOL_BITS 5
 
 // template<int NPC>
 void insertion_cell_sort(hls::stream<DTYPE> &in, hls::stream<DTYPE> &out);

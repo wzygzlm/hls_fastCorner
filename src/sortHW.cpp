@@ -3,6 +3,7 @@
 #include <iostream>
 #include "ap_int.h"
 #include "hls_stream.h"
+#include "assert.h"
 
 void insertion_sort(DTYPE A[SIZE])
 {
@@ -202,7 +203,7 @@ void merge_sort(DTYPE A[SIZE]) {
                 temp[i] = t1;
                 f1++;
             } else {
-//                assert(f2 < i3);
+                assert(f2 < i3);
                 temp[i] = t2;
                 f2++;
             }
@@ -240,7 +241,7 @@ void merge_arrays(DTYPE in[SIZE], int width, DTYPE out[SIZE]) {
       out[i] = t1;
       f1++;
     } else {
-//      assert(f2 < i3);
+      assert(f2 < i3);
       out[i] = t2;
       f2++;
     }
@@ -272,6 +273,60 @@ void merge_sort_parallel(DTYPE A[SIZE], DTYPE B[SIZE]) {
     }
 
     merge_arrays(temp[STAGES-2], width, B);
+}
+
+
+const unsigned int RADIX = 20;
+const unsigned int BITS_PER_LOOP = 4; // should be log2(RADIX)
+typedef ap_uint<BITS_PER_LOOP> Digit;
+
+void radix_sort(
+    /* input */ DTYPE in[SIZE],
+    /* output */ DTYPE out[SIZE]) {
+	DTYPE previous_sorting[SIZE], sorting[SIZE];
+    ap_uint<SYMBOL_BITS> digit_histogram[RADIX], digit_location[RADIX];
+#pragma HLS ARRAY_PARTITION variable=digit_location complete dim=1
+#pragma HLS ARRAY_PARTITION variable=digit_histogram complete dim=1
+    Digit current_digit[SIZE];
+
+ copy_in_to_sorting:
+    for(int j = 0; j < SIZE; j++) {
+#pragma HLS PIPELINE II=1
+        sorting[j] = in[j];
+    }
+
+ radix_sort:
+    for(int shift = 0; shift < 32; shift += BITS_PER_LOOP) {
+    init_histogram:
+        for(int i = 0; i < RADIX; i++) {
+#pragma HLS pipeline II=1
+            digit_histogram[i] = 0;
+        }
+
+    compute_histogram:
+        for(int j = 0; j < SIZE; j++) {
+#pragma HLS PIPELINE II=1
+            Digit digit = (sorting[j] >> shift) & (RADIX - 1); // Extrract a digit
+            current_digit[j] = digit;  // Store the current digit for each symbol
+            digit_histogram[digit]++;
+            previous_sorting[j] = sorting[j]; // Save the current sorted order of symbols
+        }
+
+        digit_location[0] = 0;
+    find_digit_location:
+        for(int i = 1; i < RADIX; i++)
+#pragma HLS PIPELINE II=1
+            digit_location[i] = digit_location[i-1] + digit_histogram[i-1];
+
+    re_sort:
+        for(int j = 0; j < SIZE; j++) {
+#pragma HLS PIPELINE II=1
+            Digit digit = current_digit[j];
+            sorting[digit_location[digit]] = previous_sorting[j]; // Move symbol to new sorted location
+            out[digit_location[digit]] = previous_sorting[j]; // Also copy to output
+            digit_location[digit]++; // Update digit_location
+        }
+    }
 }
 
 
