@@ -18,14 +18,18 @@ const int outerCircleOffset[OUTER_SIZE][2] = {{0, 4}, {1, 4}, {2, 3}, {3, 2},
       {-2, -3}, {-3, -2}, {-4, -1}, {-4, 0},
       {-4, 1}, {-3, 2}, {-2, 3}, {-1, 4}};
 
-void readCircleFromSAE(X_TYPE x, Y_TYPE y, TS_TYPE ts, TS_TYPE innerCircle[INNER_SIZE])
+void rwSAE(X_TYPE x, Y_TYPE y, TS_TYPE ts, TS_TYPE innerCircle[INNER_SIZE], TS_TYPE outerCircle[OUTER_SIZE])
 {
 	saeHW[0][x][y] = ts;
-	for(int i = 0; i < INNER_SIZE; i++)
+	readInnerCircleFromSAE:for(int i = 0; i < INNER_SIZE; i++)
 	{
-		X_TYPE xOffset = innerCircleOffset[i][0];
-		Y_TYPE yOffset = innerCircleOffset[i][1];
-		innerCircle[i] = saeHW[0][x + xOffset][y + yOffset];
+		X_TYPE xInnerOffset = innerCircleOffset[i][0];
+		Y_TYPE yInnerOffset = innerCircleOffset[i][1];
+		innerCircle[i] = saeHW[0][x + xInnerOffset][y + yInnerOffset];
+
+		X_TYPE xOuterOffset = outerCircleOffset[i][0];
+		Y_TYPE yOuterOffset = outerCircleOffset[i][1];
+		outerCircle[i] = saeHW[0][x + xOuterOffset][y + yOuterOffset];
 	}
 }
 
@@ -172,16 +176,17 @@ void radixSort(
 
 void testSortHW(TS_TYPE inputA[TEST_SORT_DATA_SIZE], TS_TYPE outputB[TEST_SORT_DATA_SIZE])
 {
-//	 mergeSortParallel<TEST_SORT_DATA_SIZE, MERGE_STAGES> (inputA, outputB);
-	insertionSortParallel<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
+	 mergeSortParallel<TEST_SORT_DATA_SIZE, MERGE_STAGES> (inputA, outputB);
+//	insertionSortParallel<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
 //	radixSort<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
 }
 
 void fastCornerHW(X_TYPE x, Y_TYPE y, TS_TYPE ts, TS_TYPE B[INNER_SIZE])
 {
-    TS_TYPE A[INNER_SIZE];
-	readCircleFromSAE(x, y, ts, A);
+    TS_TYPE inner[INNER_SIZE];
+    TS_TYPE outer[OUTER_SIZE];
+    rwSAE(x, y, ts, inner, outer);
 
-	// mergeSortParallel<INNER_SIZE, MERGE_STAGES>(A, B);
-	insertionSortParallel<INNER_SIZE, 1>(A, B);
+	 mergeSortParallel<INNER_SIZE, MERGE_STAGES>(inner, B);
+//	insertionSortParallel<INNER_SIZE, 1>(A, B);
 }

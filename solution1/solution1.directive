@@ -73,6 +73,12 @@
         <directive functionName="fastCornerHW" label="" functionLabel="">
             <pragma name="DATAFLOW"/>
         </directive>
+        <directive functionName="rwSAE" label="" functionLabel="">
+            <pragma name="RESOURCE">
+                <option name="variable" value="saeHW" positionalBoolean="4"/>
+                <option name="core" value="RAM_2P_LUTRAM"/>
+            </pragma>
+        </directive>
     </sourceFile>
 </AutoPilot:ProjectResources>
 
