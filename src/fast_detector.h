@@ -1,6 +1,5 @@
-#ifndef ABMOF_HW_ACCEL
-#define ABMOF_HW_ACCEL
-
+#ifndef FAST_DETECTOR
+#define FAST_DETECTOR 
 #include<stdint.h>
 #include "ap_int.h"
 #include "hls_stream.h"

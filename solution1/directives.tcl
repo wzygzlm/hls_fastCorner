@@ -14,3 +14,4 @@ set_directive_loop_tripcount -min 3 -max 6 "FastDetectorisFeature/FastDetectoris
 set_directive_loop_tripcount -min 4 -max 4 "FastDetectorisFeature/FastDetectorisFeature_label2"
 set_directive_array_reshape -type complete -dim 1 "min/label1/label1" inArr
 set_directive_loop_tripcount -min 0 -max 16 "insertion_sort/L2"
+set_directive_dataflow "fastCornerHW"

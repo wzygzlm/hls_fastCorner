@@ -276,7 +276,7 @@ void merge_sort_parallel(DTYPE A[SIZE], DTYPE B[SIZE]) {
 }
 
 
-const unsigned int RADIX = 20;
+const unsigned int RADIX = 16;
 const unsigned int BITS_PER_LOOP = 4; // should be log2(RADIX)
 typedef ap_uint<BITS_PER_LOOP> Digit;
 
@@ -296,7 +296,7 @@ void radix_sort(
     }
 
  radix_sort:
-    for(int shift = 0; shift < 32; shift += BITS_PER_LOOP) {
+    for(int shift = 0; shift < 20; shift += BITS_PER_LOOP) {
     init_histogram:
         for(int i = 0; i < RADIX; i++) {
 #pragma HLS pipeline II=1
