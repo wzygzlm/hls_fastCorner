@@ -5,6 +5,9 @@ solution1/csim
 solution1/sim
 solution1/*.log
 solution1/*.json
+solution1/script.tc
+.project
+.cproject
 .vivado_hls_log_all.xml
 .settings/*
 .apc/*
