@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="insertion_cell_sort">
+<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="merge_sort_parallel">
   <files>
     <file name="../src/sortTB.cpp" sc="0" tb="1" cflags=" "/>
     <file name="hls_fastCorner/src/fast_detector.cpp" sc="0" tb="false" cflags=""/>
