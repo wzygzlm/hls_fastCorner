@@ -5,10 +5,10 @@
 ############################################################
 open_project hls_fastCorner
 set_top insertion_cell_sort
-add_files /home/minliu/github_prjs/hls_abmof/hls_fastCorner/src/fast_detector.cpp
-add_files /home/minliu/github_prjs/hls_abmof/hls_fastCorner/src/fast_detector.h
-add_files hls_fastCorner/src/insertion_cell_sort.h
 add_files hls_fastCorner/src/sortHW.cpp
+add_files hls_fastCorner/src/insertion_cell_sort.h
+add_files hls_fastCorner/src/fast_detector.h
+add_files hls_fastCorner/src/fast_detector.cpp
 add_files -tb hls_fastCorner/src/sortTB.cpp
 open_solution "solution1"
 set_part {xc7z007sclg225-1}

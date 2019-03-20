@@ -4,6 +4,8 @@ solution1/.autopilot
 solution1/csim
 solution1/sim
 solution1/*.log
+solution1/*.json
 .vivado_hls_log_all.xml
 .settings/*
+.apc/*
 
