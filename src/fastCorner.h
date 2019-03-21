@@ -6,13 +6,20 @@
 #include "hls_stream.h"
 #include "ap_axi_sdata.h"
 
-#define DVS_WIDTH  240
-#define DVS_HEIGHT 5
+#define DVS_WIDTH  256
+#define DVS_HEIGHT 18*8
 
+#define RESHAPE_FACTOR 18
 
 #define X_TYPE ap_uint<8>
 #define Y_TYPE ap_uint<8>
-#define TS_TYPE ap_uint<180>
+
+// These two should change together
+#define TS_TYPE ap_uint<32>
+#define TS_TYPE_BIT_WIDTH 32
+
+#define col_pix_t ap_uint<RESHAPE_FACTOR * TS_TYPE_BIT_WIDTH>
+
 
 #define INNER_SIZE 16
 #define OUTER_SIZE 20

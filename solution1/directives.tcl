@@ -15,4 +15,3 @@ set_directive_loop_tripcount -min 4 -max 4 "FastDetectorisFeature/FastDetectoris
 set_directive_array_reshape -type complete -dim 1 "min/label1/label1" inArr
 set_directive_loop_tripcount -min 0 -max 16 "insertion_sort/L2"
 set_directive_dataflow "fastCornerHW"
-set_directive_resource -core RAM_2P_LUTRAM "rwSAE" saeHW

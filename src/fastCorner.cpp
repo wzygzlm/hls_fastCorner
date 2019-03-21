@@ -6,7 +6,7 @@
 #include "assert.h"
 
 // SAE (Surface of Active Event)
-static TS_TYPE saeHW[1][DVS_WIDTH][DVS_HEIGHT];
+static TS_TYPE saeHW[1][DVS_HEIGHT][DVS_WIDTH];
 
 const int innerCircleOffset[INNER_SIZE][2] = {{0, 3}, {1, 3}, {2, 2}, {3, 1},
       {3, 0}, {3, -1}, {2, -2}, {1, -3},
@@ -18,8 +18,50 @@ const int outerCircleOffset[OUTER_SIZE][2] = {{0, 4}, {1, 4}, {2, 3}, {3, 2},
       {-2, -3}, {-3, -2}, {-4, -1}, {-4, 0},
       {-4, 1}, {-3, 2}, {-2, 3}, {-1, 4}};
 
+
+TS_TYPE readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
+{
+#pragma HLS INLINE
+	TS_TYPE retData;
+	// Use bit selection plus for-loop to read multi-bits from a wider bit width value
+	// rather than use range selection directly. The reason is that the latter will use
+	// a lot of shift-register which will increase a lot of LUTs consumed.
+	readWiderBitsLoop: for(int8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
+	{
+#pragma HLS UNROLL
+		const int bitOffset = TS_TYPE_BIT_WIDTH >> 1;
+		ap_uint<8 + bitOffset> colIdx;
+		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+		colIdx.range(bitOffset - 1, 0) = ap_uint<2>(yIndex);
+
+		retData[yIndex] = colData[colIdx];
+//		retData[yIndex] = colData[TS_TYPE_BIT_WIDTH*idx + yIndex];
+	}
+	return retData;
+}
+
+void writePixToCol(col_pix_t *colData, ap_uint<8> idx, TS_TYPE toWriteData)
+{
+#pragma HLS INLINE
+	writeWiderBitsLoop: for(int8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
+	{
+#pragma HLS UNROLL
+		const int bitOffset = TS_TYPE_BIT_WIDTH >> 1;
+		ap_uint<8 + bitOffset> colIdx;
+		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+		colIdx.range(bitOffset - 1, 0) = ap_uint<2>(yIndex);
+
+		(*colData)[colIdx] = toWriteData[yIndex];
+	}
+}
+
+
+template<int FACTOR_NPC>
 void rwSAE(X_TYPE x, Y_TYPE y, TS_TYPE ts, TS_TYPE innerCircle[INNER_SIZE], TS_TYPE outerCircle[OUTER_SIZE])
 {
+#pragma HLS ARRAY_RESHAPE variable=saeHW cyclic factor=FACTOR_NPC dim=2
 	saeHW[0][x][y] = ts;
 	readInnerCircleFromSAE:for(int i = 0; i < INNER_SIZE; i++)
 	{
@@ -33,6 +75,10 @@ void rwSAE(X_TYPE x, Y_TYPE y, TS_TYPE ts, TS_TYPE innerCircle[INNER_SIZE], TS_T
 	}
 }
 
+void testRWSAE(X_TYPE x, Y_TYPE y, TS_TYPE ts, TS_TYPE innerCircle[INNER_SIZE], TS_TYPE outerCircle[OUTER_SIZE])
+{
+	rwSAE<RESHAPE_FACTOR>(x, y, ts, innerCircle, outerCircle);
+}
 
 template<int DATA_SIZE, int NPC>
 void insertionSortParallel(TS_TYPE A[DATA_SIZE], TS_TYPE B[DATA_SIZE]) {
@@ -185,7 +231,7 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, TS_TYPE ts, TS_TYPE B[INNER_SIZE])
 {
     TS_TYPE inner[INNER_SIZE];
     TS_TYPE outer[OUTER_SIZE];
-    rwSAE(x, y, ts, inner, outer);
+    rwSAE<RESHAPE_FACTOR>(x, y, ts, inner, outer);
 
 	 mergeSortParallel<INNER_SIZE, MERGE_STAGES>(inner, B);
 //	insertionSortParallel<INNER_SIZE, 1>(A, B);
