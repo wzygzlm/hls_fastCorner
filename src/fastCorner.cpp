@@ -57,6 +57,65 @@ void writeOneDataToCol(col_pix_t *colData, ap_uint<8> idx, ap_uint<TS_TYPE_BIT_W
 	}
 }
 
+
+// create a function with an II=3
+// - there are 3 registers explicitly used in the loop
+// - we limit the multiplier instances allowed to 1
+// -> so the tool can't schedule anything in parallel, so operations have to execute in serial fashion, II=3 is at least needed (or more depending on other clock constraints)
+void my_func(int b[4], int &r) {
+#pragma HLS inline off
+#pragma HLS ALLOCATION instances=mul limit=1 operation
+    int t=b[0],i;
+mul_loop:
+    for(i=1;i<4;i++) {
+        t=t*b[i];
+    }
+    r=t;
+}
+
+
+// this is the top level of this short example
+void top( hls::stream<int> &stream_input, hls::stream<int> &stream_output) {
+
+    int i,buff[4];
+
+    ap_uint<2> buff_index=0;
+loop_a:
+    for (i=0; i<16; i++) {
+#pragma HLS pipeline II=1
+        buff[buff_index]=stream_input.read();
+// *** this is the place whereple uses the directive in TCL ***
+		if (buff_index==3) {
+			// this is executed every 4 cycles.
+			my_occurrence_region:
+			{
+#pragma HLS OCCURRENCE cycle=4
+				buff_index=0;
+				int tmp;
+				my_func(buff,tmp);
+				stream_output.write(tmp);
+			} // my_occurrence_region
+
+		} else {
+			buff_index++;
+		}
+
+    } // for loop
+} // top function
+
+void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
+{
+#pragma HLS INLINE
+	col_pix_t tmpData;
+	Y_TYPE yNewIdx = y%RESHAPE_FACTOR;
+
+	tmpData = saeHW[0][y/RESHAPE_FACTOR][x];
+
+	writeOneDataToCol(&tmpData, yNewIdx, ts);
+
+	saeHW[0][y/RESHAPE_FACTOR][x] = tmpData;
+}
+
 void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> innerCircle[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outerCircle[OUTER_SIZE])
 {
 	readInnerCircleFromSAE:for(int i = 0; i < INNER_SIZE + 1; i++)
@@ -65,14 +124,7 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BI
 #pragma HLS PIPELINE rewind
 		if (i == INNER_SIZE)
 		{
-			col_pix_t tmpData;
-			Y_TYPE yNewIdx = y%RESHAPE_FACTOR;
-
-			tmpData = saeHW[0][y/RESHAPE_FACTOR][x];
-
-			writeOneDataToCol(&tmpData, yNewIdx, ts);
-
-			saeHW[0][y/RESHAPE_FACTOR][x] = tmpData;
+			updateSAE(x, y, ts);
 		}
 		else
 		{

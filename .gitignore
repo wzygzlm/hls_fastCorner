@@ -1,3 +1,8 @@
+.project
+.cproject
+.vivado_hls_log_all.xml
+.settings/*
+.apc/*
 solution1/syn
 solution1/impl
 solution1/.autopilot
@@ -6,9 +11,12 @@ solution1/sim
 solution1/*.log
 solution1/*.json
 solution1/script.tcl
-.project
-.cproject
-.vivado_hls_log_all.xml
-.settings/*
-.apc/*
+solution2/syn
+solution2/impl
+solution2/.autopilot
+solution2/csim
+solution2/sim
+solution2/*.log
+solution2/*.json
+solution2/script.tcl
 
