@@ -22,6 +22,30 @@ const ap_int<128> innerTest =  ap_int<128>("03132231303f2e1d0dfdeedfd0d1e2f3", 1
 const ap_int<160> outerTest = ap_int<160>("0414233241404f3e2d1c0cfceddecfc0c1d2e3f4", 16);
 
 
+// Function Description: return the minimum value of an array.
+template<typename DATA_TYPE, int DATA_SIZE>
+DATA_TYPE min(DATA_TYPE inArr[DATA_SIZE], int8_t *index)
+{
+#pragma HLS PIPELINE
+//#pragma HLS ARRAY_RESHAPE variable=inArr complete dim=1
+#pragma HLS INLINE off
+	DATA_TYPE tmp = inArr[0];
+	int8_t tmpIdx = 0;
+	minLoop: for(int8_t i = 0; i < DATA_SIZE; i++)
+	{
+		// Here is a bug. Use the if-else statement,
+		// cannot use the question mark statement.
+		// Otherwise a lot of muxs will be generated,
+		// DON'T KNOW WHY. SHOULD BE A BUG.
+		if(inArr[i] < tmp) tmpIdx = i;
+		if(inArr[i] < tmp) tmp = inArr[i];
+//		tmp = (inArr[i] < tmp) ? inArr[i] : tmp;
+	}
+	*index = tmpIdx;
+	return tmp;
+}
+
+
 ap_uint<TS_TYPE_BIT_WIDTH> readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
 {
 #pragma HLS INLINE
@@ -347,32 +371,41 @@ void testSortHW(ap_uint<TS_TYPE_BIT_WIDTH> inputA[TEST_SORT_DATA_SIZE], ap_uint<
 //	radixSort<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
 }
 
-void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> B[INNER_SIZE])
+ap_uint<TS_TYPE_BIT_WIDTH> fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> B[INNER_SIZE])
 {
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> inner[INNER_SIZE];
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    int8_t index;
     rwSAE<1>(x, y, ts, inner, outer);
+    return min< ap_uint<TS_TYPE_BIT_WIDTH>, INNER_SIZE >(inner, &index);
 
 //	 mergeSortParallel<INNER_SIZE, MERGE_STAGES>(inner, B);
-	insertionSortParallel<INNER_SIZE, 1>(inner, B);
+//	insertionSortParallel<INNER_SIZE, 1>(inner, B);
 }
 
-void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE])
+ap_uint<TS_TYPE_BIT_WIDTH> fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE])
 {
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
 	readOutterCircle<2>(x, y, outer);
-	mergeSortParallel<OUTER_SIZE, MERGE_STAGES>(outer, Outer_B);
+    int8_t index;
+    return min< ap_uint<TS_TYPE_BIT_WIDTH>, OUTER_SIZE >(outer, &index);
+
+//	mergeSortParallel<OUTER_SIZE, MERGE_STAGES>(outer, Outer_B);
 //		insertionSortParallel<OUTER_SIZE, 1>(outer, Outer_B);
 }
 
 void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1>  skip,
-		ap_uint<TS_TYPE_BIT_WIDTH> Inner_B[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE])
+		ap_uint<TS_TYPE_BIT_WIDTH> Inner_B[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE],
+		ap_uint<TS_TYPE_BIT_WIDTH> *minimum)
 {
-	fastCornerInnerHW(x, y, ts, Inner_B);
 	if(skip == 0)
 	{
-		fastCornerOuterHW(x, y, Outer_B);
+		*minimum = fastCornerInnerHW(x, y, ts, Inner_B);
+	}
+	else
+	{
+		*minimum = fastCornerOuterHW(x, y, Outer_B);
 	}
 }
