@@ -17,18 +17,9 @@ static col_pix_t saeHW[1][DVS_HEIGHT/RESHAPE_FACTOR][DVS_WIDTH];
 //      {2, -3}, {1, -4}, {0, -4}, {-1, -4},
 //      {-2, -3}, {-3, -2}, {-4, -1}, {-4, 0},
 //      {-4, 1}, {-3, 2}, {-2, 3}, {-1, 4}};
-const int innerCircleOffset[INNER_SIZE * 2] = {0, 3, 1, 3, 2, 2, 3, 1,
-      3, 0, 3, -1, 2, -2, 1, -3,
-      0, -3, -1, -3, -2, -2, -3, -1,
-      -3, 0, -3, 1, -2, 2, -1, 3};
-const int outerCircleOffset[OUTER_SIZE * 2] = {0, 4, 1, 4, 2, 3, 3, 2,
-      4, 1, 4, 0, 4, -1, 3, -2,
-      2, -3, 1, -4, 0, -4, -1, -4,
-      -2, -3, -3, -2, -4, -1, -4, 0,
-      -4, 1, -3, 2, -2, 3, -1, 4};
 
-const ap_int<128> innerTest =  ap_int<128>("031322303f2e1d0cfcee1d03132213223130312213", 16);
-const ap_int<160> outerTest = ap_int<160>("041433241404132231404142332414041322314", 16);
+const ap_int<128> innerTest =  ap_int<128>("03132231303f2e1d0dfdeedfd0d1e2f3", 16);
+const ap_int<160> outerTest = ap_int<160>("0414233241404f3e2d1c0cfceddecfc0c1d2e3f4", 16);
 
 
 ap_uint<TS_TYPE_BIT_WIDTH> readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
@@ -128,39 +119,45 @@ void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
 	saeHW[0][y/RESHAPE_FACTOR][x] = tmpData;
 }
 
+
+template<int READ_NPC>
 void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> innerCircle[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outerCircle[OUTER_SIZE])
 {
-	readInnerCircleFromSAE:for(int8_t i = 0; i < INNER_SIZE + 1; i++)
+	readInnerCircleFromSAE:for(int8_t i = 0; i < INNER_SIZE + 1; i = i + READ_NPC)
 	{
 #pragma HLS DEPENDENCE variable=saeHW inter false
 #pragma HLS PIPELINE rewind
-		if (i == INNER_SIZE)
+		if (i >= INNER_SIZE)
 		{
 			updateSAE(x, y, ts);
 		}
 		else
 		{
-			ap_uint<8> xInnerTest, xOuterTest;
-			rwSAEReadOffsetBitsLoop:
-			for (ap_uint<8> j = 0; j < 8; j++)
-			{
+            ap_uint<8> xInnerTest[READ_NPC], xOuterTest[READ_NPC];
+//            X_TYPE xInner[READ_NPC];
+//            Y_TYPE yInner[READ_NPC], yInnerNewIdx[READ_NPC];
+            readNPCLoop:
+            for (ap_uint<8> k = 0; k < READ_NPC; k++)
+            {
+            	rwSAEReadOffsetBitsLoop:
+                for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+                {
 #pragma HLS UNROLL
-				xInnerTest[j] = innerTest[( (i << 3) , j(3,0) )];
-				xOuterTest[j] = outerTest[( (i << 3) , j(3,0) )];
-			}
+                	xInnerTest[k][j] = innerTest[( (i << 4) , j(4,0) )];
+                	xOuterTest[k][j] = outerTest[( (i << 4) , j(4,0) )];
+                }
+                X_TYPE xInner = x + xInnerTest[k](3, 0);
+                Y_TYPE yInner = y + xInnerTest[k](7, 4);
+                Y_TYPE yInnerNewIdx = yInner%RESHAPE_FACTOR;
 
-			X_TYPE xInner = x + xInnerTest(3, 0);
-			Y_TYPE yInner = y + xInnerTest(7, 4);
-			Y_TYPE yInnerNewIdx = yInner%RESHAPE_FACTOR;
+                innerCircle[i + k] = readOneDataFromCol(saeHW[0][yInner/RESHAPE_FACTOR][xInner], yInnerNewIdx);
+            }
 
-			X_TYPE xOuter = x + xOuterTest(3, 0);
-			Y_TYPE yOuter = y + xOuterTest(7, 4);
-			Y_TYPE yOuterNewIdx = yOuter%RESHAPE_FACTOR;
-
-			innerCircle[i] = readOneDataFromCol(saeHW[0][yInner/RESHAPE_FACTOR][xInner], yInnerNewIdx);
-
-
-			outerCircle[i] = readOneDataFromCol(saeHW[0][yOuter/RESHAPE_FACTOR][xOuter], yOuterNewIdx);
+//			X_TYPE xOuter = x + xOuterTest(3, 0);
+//			Y_TYPE yOuter = y + xOuterTest(7, 4);
+//			Y_TYPE yOuterNewIdx = yOuter%RESHAPE_FACTOR;
+//
+//			outerCircle[i] = readOneDataFromCol(saeHW[0][yOuter/RESHAPE_FACTOR][xOuter], yOuterNewIdx);
 		}
 	}
 }
@@ -317,7 +314,7 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_
 {
     ap_uint<TS_TYPE_BIT_WIDTH> inner[INNER_SIZE];
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
-    rwSAE(x, y, ts, inner, outer);
+    rwSAE<2>(x, y, ts, inner, outer);
 
 	 mergeSortParallel<INNER_SIZE, MERGE_STAGES>(inner, B);
 //	insertionSortParallel<INNER_SIZE, 1>(A, B);
