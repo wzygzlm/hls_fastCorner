@@ -120,10 +120,10 @@ void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
 }
 
 
-template<int READ_NPC>
+template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
 void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> innerCircle[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outerCircle[OUTER_SIZE])
 {
-	readInnerCircleFromSAE:for(int8_t i = 0; i < INNER_SIZE + 1; i = i + READ_NPC)
+	readInnerCircleFromSAE:for(ap_uint<8> i = 0; i < INNER_SIZE + 1; i = i + READ_NPC)
 	{
 #pragma HLS DEPENDENCE variable=saeHW inter false
 #pragma HLS PIPELINE rewind
@@ -133,24 +133,28 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BI
 		}
 		else
 		{
-            ap_uint<8> xInnerTest[READ_NPC], xOuterTest[READ_NPC];
-//            X_TYPE xInner[READ_NPC];
-//            Y_TYPE yInner[READ_NPC], yInnerNewIdx[READ_NPC];
+            ap_uint<8 * READ_NPC> xInnerTest, xOuterTest;
+            X_TYPE xInner[READ_NPC];
+            Y_TYPE yInner[READ_NPC], yInnerNewIdx[READ_NPC];
+        	rwSAEReadOffsetBitsLoop:
+            for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+            {
+#pragma HLS UNROLL
+            	ap_uint<8> tmpIndex;
+            	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+            	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+            	xInnerTest[j] = innerTest[tmpIndex];
+            	xOuterTest[j] = outerTest[tmpIndex];
+            }
+
             readNPCLoop:
             for (ap_uint<8> k = 0; k < READ_NPC; k++)
             {
-            	rwSAEReadOffsetBitsLoop:
-                for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
-                {
-#pragma HLS UNROLL
-                	xInnerTest[k][j] = innerTest[( (i << 4) , j(4,0) )];
-                	xOuterTest[k][j] = outerTest[( (i << 4) , j(4,0) )];
-                }
-                X_TYPE xInner = x + xInnerTest[k](3, 0);
-                Y_TYPE yInner = y + xInnerTest[k](7, 4);
-                Y_TYPE yInnerNewIdx = yInner%RESHAPE_FACTOR;
+                xInner[k] = x + xInnerTest(8 * k + 3, 8  * k);
+                yInner[k] = y + xInnerTest(8 * k + 7, 8 * k + 4);
+                yInnerNewIdx[k] = yInner[k]%RESHAPE_FACTOR;
 
-                innerCircle[i + k] = readOneDataFromCol(saeHW[0][yInner/RESHAPE_FACTOR][xInner], yInnerNewIdx);
+                innerCircle[i + k] = readOneDataFromCol(saeHW[0][yInner[k]/RESHAPE_FACTOR][xInner[k]], yInnerNewIdx[k]);
             }
 
 //			X_TYPE xOuter = x + xOuterTest(3, 0);
@@ -162,6 +166,39 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BI
 	}
 }
 
+
+template<int READ_NPC>
+void readOutterCircle(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> outerCircle[OUTER_SIZE])
+{
+	readOuterCircleFromSAE:for(ap_uint<8> i = 0; i < OUTER_SIZE; i = i + READ_NPC)
+	{
+#pragma HLS DEPENDENCE variable=saeHW inter false
+#pragma HLS PIPELINE rewind
+
+        ap_uint<8 * READ_NPC> xOuterTest;
+        X_TYPE xOuter[READ_NPC];
+        Y_TYPE yOuter[READ_NPC], yOuterNewIdx[READ_NPC];
+    	rwSAEReadOuterOffsetBitsLoop:
+        for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+        {
+#pragma HLS UNROLL
+        	ap_uint<8> tmpIndex;
+        	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+        	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+        	xOuterTest[j] = outerTest[tmpIndex];
+        }
+
+        readOuterNPCLoop:
+        for (ap_uint<8> k = 0; k < READ_NPC; k++)
+        {
+            xOuter[k] = x + xOuterTest(8 * k + 3, 8  * k);
+            yOuter[k] = y + xOuterTest(8 * k + 7, 8 * k + 4);
+            yOuterNewIdx[k] = yOuter[k]%RESHAPE_FACTOR;
+
+            outerCircle[i + k] = readOneDataFromCol(saeHW[0][yOuter[k]/RESHAPE_FACTOR][xOuter[k]], yOuterNewIdx[k]);
+        }
+	}
+}
 
 template<int DATA_SIZE, int NPC>
 void insertionSortParallel(ap_uint<TS_TYPE_BIT_WIDTH> A[DATA_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> B[DATA_SIZE]) {
@@ -305,17 +342,37 @@ void radixSort(
 
 void testSortHW(ap_uint<TS_TYPE_BIT_WIDTH> inputA[TEST_SORT_DATA_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outputB[TEST_SORT_DATA_SIZE])
 {
-	 mergeSortParallel<TEST_SORT_DATA_SIZE, MERGE_STAGES> (inputA, outputB);
+//	 mergeSortParallel<TEST_SORT_DATA_SIZE, MERGE_STAGES> (inputA, outputB);
 //	insertionSortParallel<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
 //	radixSort<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
 }
 
-void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> B[INNER_SIZE])
+void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> B[INNER_SIZE])
 {
+#pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> inner[INNER_SIZE];
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
-    rwSAE<2>(x, y, ts, inner, outer);
+    rwSAE<1>(x, y, ts, inner, outer);
 
-	 mergeSortParallel<INNER_SIZE, MERGE_STAGES>(inner, B);
-//	insertionSortParallel<INNER_SIZE, 1>(A, B);
+//	 mergeSortParallel<INNER_SIZE, MERGE_STAGES>(inner, B);
+	insertionSortParallel<INNER_SIZE, 1>(inner, B);
+}
+
+void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE])
+{
+#pragma HLS DATAFLOW
+    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+	readOutterCircle<2>(x, y, outer);
+	mergeSortParallel<OUTER_SIZE, MERGE_STAGES>(outer, Outer_B);
+//		insertionSortParallel<OUTER_SIZE, 1>(outer, Outer_B);
+}
+
+void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1>  skip,
+		ap_uint<TS_TYPE_BIT_WIDTH> Inner_B[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE])
+{
+	fastCornerInnerHW(x, y, ts, Inner_B);
+	if(skip == 0)
+	{
+		fastCornerOuterHW(x, y, Outer_B);
+	}
 }

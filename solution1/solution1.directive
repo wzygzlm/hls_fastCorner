@@ -70,9 +70,6 @@
                 <option name="max" value="16"/>
             </pragma>
         </directive>
-        <directive functionName="fastCornerHW" label="" functionLabel="">
-            <pragma name="DATAFLOW"/>
-        </directive>
     </sourceFile>
 </AutoPilot:ProjectResources>
 
