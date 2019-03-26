@@ -32,4 +32,7 @@
 
 #define SYMBOL_BITS 5
 
+#define SIZE 16
+void mergeSortParallelWithSize(ap_uint<TS_TYPE_BIT_WIDTH> A[OUTER_SIZE], ap_uint<8> num_symbols,  ap_uint<TS_TYPE_BIT_WIDTH> B[OUTER_SIZE]);
+
 #endif

@@ -1,13 +1,23 @@
-#include "insertion_cell_sort.h"
+#include "fastCorner.h"
 #include <iostream>
 #include <stdlib.h>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+using namespace std;
+#include "ap_fixed.h"
+#include "time.h"
 
 const static int DEBUG=1;
 const static int MAX_NUMBER=1000;
+#define DTYPE ap_uint<TS_TYPE_BIT_WIDTH>
+#define TEST_TIMES 20
 
-void insertion_sortSW(DTYPE A[SIZE]) {
+void insertion_sortSW(DTYPE A[20], int size, DTYPE sortOut[20]) {
     L1:
-    for(int i = 1; i < SIZE; i++) {
+    for(int i = 1; i < size; i++) {
         DTYPE item = A[i];
         int j = i;
     DTYPE t = A[j-1];
@@ -21,51 +31,92 @@ void insertion_sortSW(DTYPE A[SIZE]) {
     }
 }
 
-int main () {
+int main ()
+{
+	int testTimes = TEST_TIMES;
+
+    int total_err_cnt = 0;
+	int retval=0;
+
+	/******************* Test parseEvents module from random value**************************/
+    srand((unsigned)time(NULL)); //change me if you want different numbers
+	int32_t eventCnt = 500;
+	uint64_t data[eventCnt];
+	int32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
+
     int fail = 0;
-    DTYPE input[SIZE];
-    DTYPE cell_output[SIZE] = {0};
+    DTYPE input[20];
+    DTYPE cell_output[20] = {0};
+    DTYPE merge_sort_input[20]= {0}, merge_sort_output[20] = {0};
     hls::stream<DTYPE> in, out;
 
-    //generate random data to sort
-    if(DEBUG) std::cout << "Random Input Data\n";
-    srand(20); //change me if you want different numbers
-    for(int i = 0; i < SIZE; i++) {
-        input[i] = rand() % MAX_NUMBER + 1;
-        if(DEBUG) std::cout << input[i] << "\t";
-    }
+	for(int k = 0; k < TEST_TIMES; k++)
+	{
+		cout << "Test " << k << ":" << endl;
 
-    //process the data through the insertion_cell_sort function
-    for(int i = 0; i < SIZE*2; i++) {
-        if(i < SIZE) {
-            //feed in the SIZE elements to be sorted
-            in.write(input[i]);
-            insertion_cell_sort(in, out);
-            cell_output[i] = out.read();
-        } else {
-            //then send in dummy data to flush pipeline
-            in.write(MAX_NUMBER);
-            insertion_cell_sort(in, out);
-            cell_output[i-SIZE] = out.read();
-        }
-    }
+	    int err_cnt = 0;
 
-    //sort the data using the insertion_sort function
-    insertion_sortSW(input);
+	    //generate random data to sort
+	    if(DEBUG) std::cout << "Random Input Data\n";
+ 		int size = rand()%20;
+// 		size = 3;
+	    for(int i = 0; i < size; i++) {
+	        input[i] = rand() % MAX_NUMBER + 1;
+	        merge_sort_input[i] = input[i];
+	        if(DEBUG) std::cout << input[i] << "\t";
+	    }
 
-    //compare the results of insertion_sort to insertion_cell_sort; fail if they differ
-    if(DEBUG) std::cout << "\nSorted Output\n";
-    for(int i = 0; i < SIZE; i++) {
-        if(DEBUG) std::cout << cell_output[i] << "\t";
-    }
-    for(int i = 0; i < SIZE; i++) {
-        if(input[i] != cell_output[i]) {
-            fail = 1;
-            std::cout << "golden=" << input[i] << "hw=" << cell_output[i] << "\n";
-        }
-    }
+	    //process the data through the insertion_cell_sort function
+	//    for(int i = 0; i < SIZE*2; i++) {
+	//        if(i < SIZE) {
+	//            //feed in the SIZE elements to be sorted
+	//            in.write(input[i]);
+	//            insertion_cell_sort(in, out);
+	//            cell_output[i] = out.read();
+	//        } else {
+	//            //then send in dummy data to flush pipeline
+	//            in.write(MAX_NUMBER);
+	//            insertion_cell_sort(in, out);
+	//            cell_output[i-SIZE] = out.read();
+	//        }
+	//    }
 
-    if(fail == 0) std::cout << "PASS\n";
-    else std::cout << "FAIL\n";
-    return fail;
+	    //sort the data using the insertion_sort function
+	    insertion_sortSW(input, size, cell_output);
+	    mergeSortParallelWithSize(merge_sort_input, size, merge_sort_output);
+
+	    //compare the results of insertion_sort to insertion_cell_sort; fail if they differ
+	    if(DEBUG) std::cout << "\nSorted Output\n";
+	    for(int i = 0; i < size; i++) {
+	        if(DEBUG) std::cout << merge_sort_output[i] << "\t";
+	    }
+	    for(int i = 0; i < size; i++) {
+	        if(input[i] != merge_sort_output[i]) {
+	        	err_cnt = 1;
+	            std::cout << "golden= " << input[i] << " hw=" << merge_sort_output[i] << "\n";
+	        }
+	    }
+
+		if(err_cnt == 0)
+		{
+			cout << "Test " << k << " passed." << endl;
+		}
+		total_err_cnt += err_cnt;
+		cout << endl;
+	}
+
+
+	if (total_err_cnt == 0)
+	{
+			cout<<"*** TEST PASSED ***" << endl;
+			retval = 0;
+	} else
+	{
+			cout<<"!!! TEST FAILED - " << total_err_cnt << " mismatches detected !!!";
+			cout<< endl;
+			retval = -1;
+	}
+
+	// Return 0 if the test passes
+	return retval;
 }

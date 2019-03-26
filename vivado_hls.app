@@ -1,8 +1,8 @@
-<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="fastCornerInnerHW">
+<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="mergeSortParallelWithSize">
     <includePaths/>
     <libraryPaths/>
     <Simulation>
-        <SimFlow name="csim" csimMode="0" lastCsimMode="0"/>
+        <SimFlow name="csim" setup="true" csimMode="0" lastCsimMode="0"/>
     </Simulation>
     <files xmlns="">
         <file name="../src/sortTB.cpp" sc="0" tb="1" cflags=" "/>

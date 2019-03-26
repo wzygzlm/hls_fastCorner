@@ -455,6 +455,14 @@ void mergeArraysWithSize(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<8> w
 	     }
 	  }
   }
+//  else
+//  {
+//	  for (int i = 0; i < size; i++) {
+//	#pragma HLS LOOP_TRIPCOUNT min=0 max=20
+//	#pragma HLS PIPELINE II=1
+//		  out[i] = in[i];
+//	  }
+//  }
 }
 
 void mergeSortParallelWithSize(ap_uint<TS_TYPE_BIT_WIDTH> A[OUTER_SIZE], ap_uint<8> num_symbols,  ap_uint<TS_TYPE_BIT_WIDTH> B[OUTER_SIZE])
