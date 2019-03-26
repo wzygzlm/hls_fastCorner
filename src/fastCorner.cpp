@@ -26,7 +26,7 @@ const ap_int<160> outerTest = ap_int<160>("0414233241404f3e2d1c0cfceddecfc0c1d2e
 template<typename DATA_TYPE, int DATA_SIZE>
 DATA_TYPE min(DATA_TYPE inArr[DATA_SIZE], int8_t *index)
 {
-#pragma HLS PIPELINE
+//#pragma HLS PIPELINE
 //#pragma HLS ARRAY_RESHAPE variable=inArr complete dim=1
 #pragma HLS INLINE off
 	DATA_TYPE tmp = inArr[0];
@@ -145,48 +145,92 @@ void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
 
 
 template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
-void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> innerCircle[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outerCircle[OUTER_SIZE])
+void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<8> *size)
 {
-	readInnerCircleFromSAE:for(ap_uint<8> i = 0; i < INNER_SIZE + 1; i = i + READ_NPC)
+	if(stage == 0)
 	{
-#pragma HLS DEPENDENCE variable=saeHW inter false
-#pragma HLS PIPELINE rewind
-		if (i >= INNER_SIZE)
+		updateSAE(x, y, ts);
+
+		readInnerCircleFromSAE:for(ap_uint<8> i = 0; i < INNER_SIZE; i = i + READ_NPC)
 		{
-			updateSAE(x, y, ts);
+	#pragma HLS DEPENDENCE variable=saeHW inter false
+	#pragma HLS PIPELINE rewind
+//			if (i >= INNER_SIZE)
+//			{
+//				updateSAE(x, y, ts);
+//			}
+//			else
+//			{
+	            ap_uint<8 * READ_NPC> xInnerTest, xOuterTest;
+	            X_TYPE xInner[READ_NPC];
+	            Y_TYPE yInner[READ_NPC], yInnerNewIdx[READ_NPC];
+	        	rwSAEReadOffsetBitsLoop:
+	            for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+	            {
+	#pragma HLS UNROLL
+	            	ap_uint<8> tmpIndex;
+	            	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+	            	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+	            	xInnerTest[j] = innerTest[tmpIndex];
+	            	xOuterTest[j] = outerTest[tmpIndex];
+	            }
+
+	            readNPCLoop:
+	            for (ap_uint<8> k = 0; k < READ_NPC; k++)
+	            {
+	                xInner[k] = x + xInnerTest(8 * k + 3, 8  * k);
+	                yInner[k] = y + xInnerTest(8 * k + 7, 8 * k + 4);
+	                yInnerNewIdx[k] = yInner[k]%RESHAPE_FACTOR;
+
+	                outputData[i + k] = readOneDataFromCol(saeHW[0][yInner[k]/RESHAPE_FACTOR][xInner[k]], yInnerNewIdx[k]);
+	            }
+
+	//			X_TYPE xOuter = x + xOuterTest(3, 0);
+	//			Y_TYPE yOuter = y + xOuterTest(7, 4);
+	//			Y_TYPE yOuterNewIdx = yOuter%RESHAPE_FACTOR;
+	//
+	//			outerCircle[i] = readOneDataFromCol(saeHW[0][yOuter/RESHAPE_FACTOR][xOuter], yOuterNewIdx);
+//			}
 		}
-		else
+
+		*size = INNER_SIZE;
+	}
+	else if(stage == 1)
+	{
+		readOuterCircleFromSAE:for(ap_uint<8> i = 0; i < OUTER_SIZE; i = i + READ_NPC)
 		{
-            ap_uint<8 * READ_NPC> xInnerTest, xOuterTest;
-            X_TYPE xInner[READ_NPC];
-            Y_TYPE yInner[READ_NPC], yInnerNewIdx[READ_NPC];
-        	rwSAEReadOffsetBitsLoop:
-            for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
-            {
-#pragma HLS UNROLL
-            	ap_uint<8> tmpIndex;
-            	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
-            	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
-            	xInnerTest[j] = innerTest[tmpIndex];
-            	xOuterTest[j] = outerTest[tmpIndex];
-            }
+	#pragma HLS DEPENDENCE variable=saeHW inter false
+	#pragma HLS PIPELINE rewind
 
-            readNPCLoop:
-            for (ap_uint<8> k = 0; k < READ_NPC; k++)
-            {
-                xInner[k] = x + xInnerTest(8 * k + 3, 8  * k);
-                yInner[k] = y + xInnerTest(8 * k + 7, 8 * k + 4);
-                yInnerNewIdx[k] = yInner[k]%RESHAPE_FACTOR;
+	        ap_uint<8 * READ_NPC> xOuterTest;
+	        X_TYPE xOuter[READ_NPC];
+	        Y_TYPE yOuter[READ_NPC], yOuterNewIdx[READ_NPC];
+	    	rwSAEReadOuterOffsetBitsLoop:
+	        for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+	        {
+	#pragma HLS UNROLL
+	        	ap_uint<8> tmpIndex;
+	        	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+	        	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+	        	xOuterTest[j] = outerTest[tmpIndex];
+	        }
 
-                innerCircle[i + k] = readOneDataFromCol(saeHW[0][yInner[k]/RESHAPE_FACTOR][xInner[k]], yInnerNewIdx[k]);
-            }
+	        readOuterNPCLoop:
+	        for (ap_uint<8> k = 0; k < READ_NPC; k++)
+	        {
+	            xOuter[k] = x + xOuterTest(8 * k + 3, 8  * k);
+	            yOuter[k] = y + xOuterTest(8 * k + 7, 8 * k + 4);
+	            yOuterNewIdx[k] = yOuter[k]%RESHAPE_FACTOR;
 
-//			X_TYPE xOuter = x + xOuterTest(3, 0);
-//			Y_TYPE yOuter = y + xOuterTest(7, 4);
-//			Y_TYPE yOuterNewIdx = yOuter%RESHAPE_FACTOR;
-//
-//			outerCircle[i] = readOneDataFromCol(saeHW[0][yOuter/RESHAPE_FACTOR][xOuter], yOuterNewIdx);
+	            outputData[i + k] = readOneDataFromCol(saeHW[0][yOuter[k]/RESHAPE_FACTOR][xOuter[k]], yOuterNewIdx[k]);
+	        }
 		}
+
+		*size = OUTER_SIZE;
+	}
+	else
+	{
+		*size = 0;
 	}
 }
 
@@ -225,7 +269,8 @@ void readOutterCircle(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> outerCircle
 }
 
 template<int DATA_SIZE, int NPC>
-void insertionSortParallel(ap_uint<TS_TYPE_BIT_WIDTH> A[DATA_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> B[DATA_SIZE]) {
+void insertionSortParallel(ap_uint<TS_TYPE_BIT_WIDTH> A[DATA_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> B[DATA_SIZE])
+{
     #pragma HLS array_partition variable=B complete
     L1:  for(int i = 0; i < DATA_SIZE; i++)
     {
@@ -316,45 +361,57 @@ typedef ap_uint<BITS_PER_LOOP> Digit;
 template<int DATA_SIZE, int NPC>
 void radixSort(
     /* input */ ap_uint<TS_TYPE_BIT_WIDTH> in[DATA_SIZE],
+	/* input */ ap_uint<8> num_symbols,
     /* output */ ap_uint<TS_TYPE_BIT_WIDTH> out[DATA_SIZE]) {
 	ap_uint<TS_TYPE_BIT_WIDTH> previous_sorting[DATA_SIZE], sorting[DATA_SIZE];
     ap_uint<SYMBOL_BITS> digit_histogram[RADIX], digit_location[RADIX];
 #pragma HLS ARRAY_PARTITION variable=digit_location complete dim=1
 #pragma HLS ARRAY_PARTITION variable=digit_histogram complete dim=1
+
     Digit current_digit[DATA_SIZE];
 
  copy_in_to_sorting:
-    for(int j = 0; j < DATA_SIZE; j++) {
+    for(int j = 0; j < num_symbols; j++) {
 #pragma HLS PIPELINE II=1
         sorting[j] = in[j];
     }
 
- radix_sort:
-    for(int shift = 0; shift < 20; shift += BITS_PER_LOOP) {
+ radix_sort_step1:
+    for(int shift = 0; shift < TS_TYPE_BIT_WIDTH; shift += BITS_PER_LOOP) {
     init_histogram:
         for(int i = 0; i < RADIX; i++) {
-#pragma HLS pipeline II=1
+#pragma HLS pipeline rewind
             digit_histogram[i] = 0;
         }
+    }
 
+radix_sort_step2:
+   for(int shift = 0; shift < TS_TYPE_BIT_WIDTH; shift += BITS_PER_LOOP) {
     compute_histogram:
-        for(int j = 0; j < DATA_SIZE; j++) {
-#pragma HLS PIPELINE II=1
+        for(int j = 0; j < num_symbols; j++) {
+#pragma HLS pipeline rewind
             Digit digit = (sorting[j] >> shift) & (RADIX - 1); // Extract a digit
             current_digit[j] = digit;  // Store the current digit for each symbol
             digit_histogram[digit]++;
             previous_sorting[j] = sorting[j]; // Save the current sorted order of symbols
         }
+     }
 
+radix_sort_step3:
+	  for(int shift = 0; shift < TS_TYPE_BIT_WIDTH; shift += BITS_PER_LOOP) {
         digit_location[0] = 0;
     find_digit_location:
         for(int i = 1; i < RADIX; i++)
-#pragma HLS PIPELINE II=1
+#pragma HLS pipeline rewind
             digit_location[i] = digit_location[i-1] + digit_histogram[i-1];
 
+	  }
+
+radix_sort_step4:
+  for(int shift = 0; shift < TS_TYPE_BIT_WIDTH; shift += BITS_PER_LOOP) {
     re_sort:
-        for(int j = 0; j < DATA_SIZE; j++) {
-#pragma HLS PIPELINE II=1
+        for(int j = 0; j < num_symbols; j++) {
+#pragma HLS pipeline rewind
             Digit digit = current_digit[j];
             sorting[digit_location[digit]] = previous_sorting[j]; // Move symbol to new sorted location
             out[digit_location[digit]] = previous_sorting[j]; // Also copy to output
@@ -364,24 +421,87 @@ void radixSort(
 }
 
 
+void mergeArraysWithSize(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<8> width,  ap_uint<8> size, ap_uint<TS_TYPE_BIT_WIDTH> out[OUTER_SIZE])
+{
+  if(size != 0)
+  {
+		int f1 = 0;
+	  int f2 = width;
+	  int i2 = width;
+	  int i3 = 2*width;
+	  if(i2 >= size) i2 = size;
+	  if(i3 >= size) i3 = size;
+	 merge_arrays:
+	  for (int i = 0; i < size; i++) {
+	#pragma HLS LOOP_TRIPCOUNT min=0 max=20
+	#pragma HLS PIPELINE II=1
+	      ap_uint<TS_TYPE_BIT_WIDTH> t1 = in[f1];
+	      ap_uint<TS_TYPE_BIT_WIDTH> t2 = in[f2];
+	    if((f1 < i2 && t1 <= t2) || f2 == i3) {
+	      out[i] = t1;
+	      f1++;
+	    } else {
+	      assert(f2 < i3);
+	      out[i] = t2;
+	      f2++;
+	    }
+	    if(f1 == i2 && f2 == i3) {
+	      f1 = i3;
+	      i2 += 2*width;
+	      i3 += 2*width;
+	      if(i2 >= size) i2 = size;
+	      if(i3 >= size) i3 = size;
+	      f2 = i2;
+	     }
+	  }
+  }
+}
+
+void mergeSortParallelWithSize(ap_uint<TS_TYPE_BIT_WIDTH> A[OUTER_SIZE], ap_uint<8> num_symbols,  ap_uint<TS_TYPE_BIT_WIDTH> B[OUTER_SIZE])
+{
+#pragma HLS DATAFLOW
+
+    ap_uint<TS_TYPE_BIT_WIDTH> temp[5-1][20];
+#pragma HLS ARRAY_PARTITION variable=temp complete dim=1
+    int width = 1;
+
+    mergeArraysWithSize(A, width, num_symbols, temp[0]);
+    width *= 2;
+
+    stage:
+	for (int stage = 1; stage < 5-1; stage++) {
+#pragma HLS UNROLL
+		mergeArraysWithSize(temp[stage-1], width, num_symbols, temp[stage]);
+        width *= 2;
+    }
+
+	mergeArraysWithSize(temp[5-2], width, num_symbols, B);
+}
+
+
+
+
 void testSortHW(ap_uint<TS_TYPE_BIT_WIDTH> inputA[TEST_SORT_DATA_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outputB[TEST_SORT_DATA_SIZE])
 {
 //	 mergeSortParallel<TEST_SORT_DATA_SIZE, MERGE_STAGES> (inputA, outputB);
 //	insertionSortParallel<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
-//	radixSort<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
+	radixSort<TEST_SORT_DATA_SIZE, 1> (inputA, 16, outputB);
 }
 
-ap_uint<TS_TYPE_BIT_WIDTH> fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<TS_TYPE_BIT_WIDTH> B[INNER_SIZE])
+void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
+		ap_uint<TS_TYPE_BIT_WIDTH> innerSort[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outerSort[OUTER_SIZE])
 {
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> inner[INNER_SIZE];
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    ap_uint<8> size;
     int8_t index;
-    rwSAE<1>(x, y, ts, inner, outer);
-    return min< ap_uint<TS_TYPE_BIT_WIDTH>, INNER_SIZE >(inner, &index);
+    rwSAE<2>(x, y, ts, stage, outer, &size);
+    mergeSortParallelWithSize(outer, size, outerSort);
+//    return min< ap_uint<TS_TYPE_BIT_WIDTH>, INNER_SIZE >(inner, &index);
 
-//	 mergeSortParallel<INNER_SIZE, MERGE_STAGES>(inner, B);
-//	insertionSortParallel<INNER_SIZE, 1>(inner, B);
+//    insertionSortParallel<OUTER_SIZE, 1>(outer, outerSort);
+//	mergeSortParallel<INNER_SIZE, 4>(inner, innerSort);
 }
 
 ap_uint<TS_TYPE_BIT_WIDTH> fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE])
@@ -400,12 +520,12 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 		ap_uint<TS_TYPE_BIT_WIDTH> Inner_B[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE],
 		ap_uint<TS_TYPE_BIT_WIDTH> *minimum)
 {
-	if(skip == 0)
-	{
-		*minimum = fastCornerInnerHW(x, y, ts, Inner_B);
-	}
-	else
-	{
-		*minimum = fastCornerOuterHW(x, y, Outer_B);
-	}
+//	if(skip == 0)
+//	{
+//		*minimum = fastCornerInnerHW(x, y, ts, Inner_B);
+//	}
+//	else
+//	{
+//		*minimum = fastCornerOuterHW(x, y, Outer_B);
+//	}
 }

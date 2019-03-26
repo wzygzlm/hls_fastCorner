@@ -26,7 +26,7 @@
 #define INNER_SIZE 16
 #define OUTER_SIZE 20
 
-#define TEST_SORT_DATA_SIZE 32
+#define TEST_SORT_DATA_SIZE 20
 
 #define MERGE_STAGES 5
 
