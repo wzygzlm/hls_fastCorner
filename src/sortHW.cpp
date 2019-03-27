@@ -176,6 +176,51 @@ void cell7(hls::stream<DTYPE> & in, hls::stream<DTYPE> & out)
     }
 }
 
+
+//
+//template<int i>
+//void modify()
+//{ std::cout << "modify<"<<i<<">"<< std::endl; }
+//
+//template<int x, int to, hls::stream<DTYPE> tmpOut[7]>
+//struct static_for
+//{
+//    void operator()()
+//    {  cell<x>(tmpOut[x - 1], tmpOut[x]);  static_for<x+1,to, hls::stream<DTYPE> tmpOut[7]>()(); }
+//};
+//
+//template<int to, hls::stream<DTYPE> tmpOut[7]>
+//struct static_for<to,to, tmpOut[7]>
+//{
+//    void operator()()
+//    {}
+//};
+
+
+//template<void(*pVisit)(hls::stream<DTYPE>&, hls::stream<DTYPE>&)>
+//void foreach(hls::stream<DTYPE> arg[], int num)
+//{
+////int i = 0;
+//
+//for(int i=1; i<num; i++){
+//pVisit<i>(arg[i - 1 ], arg[i]);
+//}
+//}
+
+
+//
+//template<int i, int to>
+//void createCells(hls::stream<DTYPE> tmpOut[7])
+//{
+//	cell<i>(tmpOut[i - 1], tmpOut[i]);
+//	createCells<i + 1, to>(tmpOut);
+//}
+//
+//template<int to>
+//void createCells<to, to>(hls::stream<DTYPE> tmpOut[7])
+//{
+//}
+
 // template<int NPC>
 void insertion_cell_sort(hls::stream<DTYPE> &in, hls::stream<DTYPE> &out)
 {
@@ -202,6 +247,10 @@ void insertion_cell_sort(hls::stream<DTYPE> &in, hls::stream<DTYPE> &out)
     hls::stream<DTYPE> tmpOut[7];
 
         cell<0>(in, tmpOut[0]);
+//        static_for<1, 7>()();
+//        foreach<hls::stream<DTYPE>, cell>(tmpOut, 7);
+//        createCells<1, 7>(tmpOut);
+
         cell<1>(tmpOut[0], tmpOut[1]);
         cell<2>(tmpOut[1], tmpOut[2]);
         cell<3>(tmpOut[2], tmpOut[3]);

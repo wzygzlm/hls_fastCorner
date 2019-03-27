@@ -274,12 +274,12 @@ void insertionSortParallel(ap_uint<TS_TYPE_BIT_WIDTH> A[DATA_SIZE], ap_uint<TS_T
     #pragma HLS array_partition variable=B complete
     L1:  for(int i = 0; i < DATA_SIZE; i++)
     {
-        #pragma HLS pipeline II=1
+        #pragma HLS pipeline II=1 rewind
     	ap_uint<TS_TYPE_BIT_WIDTH> item = A[i];
         L2:
         for (int j = DATA_SIZE - 1; j >= 0; j--)
         {
-        	int t;
+        	ap_uint<TS_TYPE_BIT_WIDTH> t;
         	if(j > i)
         	{
         		t = B[j];
@@ -301,6 +301,150 @@ void insertionSortParallel(ap_uint<TS_TYPE_BIT_WIDTH> A[DATA_SIZE], ap_uint<TS_T
     }
 }
 
+
+
+static uint8_t sortedIndex[INNER_SIZE] = {0};
+template<int CELL_ID>
+void cellExt(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > & in, hls::stream<ap_uint< TS_TYPE_BIT_WIDTH> > & out,
+		ap_uint<TS_TYPE_BIT_WIDTH> initVal,
+		hls::stream<uint8_t> & indexStream)
+{
+    const static uint8_t cellId = CELL_ID;    // The cell's id.
+    static ap_uint<TS_TYPE_BIT_WIDTH> local = 0;
+    static uint8_t dataIndex = 0;
+    static uint8_t counter = 0;
+    ap_uint<TS_TYPE_BIT_WIDTH> in_copy = in.read();
+
+    if (counter == 0)
+    {
+    	local = initVal;
+    }
+
+    if(in_copy < initVal)
+    {
+    	dataIndex++;
+    }
+
+    counter++;
+
+    if (counter >= INNER_SIZE)
+    {
+    	counter = 0;
+    	indexStream.write(dataIndex);
+    }
+
+    out.write(in_copy);
+}
+
+void testCellExt(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > & in, hls::stream<ap_uint< TS_TYPE_BIT_WIDTH> > & out,
+		ap_uint<TS_TYPE_BIT_WIDTH> initVal[8],
+		hls::stream<uint8_t>  indexStream[8])
+{
+#pragma HLS ARRAY_PARTITION variable=initVal complete dim=0
+#pragma HLS DATAFLOW
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tmpOut[7];
+
+	cellExt<0>(in, tmpOut[0], initVal[0], indexStream[0]);
+	cellExt<1>(tmpOut[0], tmpOut[1], initVal[1], indexStream[1]);
+	cellExt<2>(tmpOut[1], tmpOut[2], initVal[2], indexStream[2]);
+	cellExt<3>(tmpOut[2], tmpOut[3], initVal[3], indexStream[3]);
+	cellExt<4>(tmpOut[3], tmpOut[4], initVal[4], indexStream[4]);
+	cellExt<5>(tmpOut[4], tmpOut[5], initVal[5], indexStream[5]);
+	cellExt<6>(tmpOut[5], tmpOut[6], initVal[6], indexStream[6]);
+	cellExt<7>(tmpOut[6], out, initVal[7], indexStream[7]);
+}
+
+void insertionCellExtSort(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > & in, hls::stream<ap_uint< TS_TYPE_BIT_WIDTH> > & out,
+		ap_uint<TS_TYPE_BIT_WIDTH> initVal[8], ap_uint<TS_TYPE_BIT_WIDTH> outputIndex[8])
+{
+#pragma HLS ARRAY_PARTITION variable=initVal complete dim=0
+#pragma HLS DATAFLOW
+#pragma HLS ARRAY_PARTITION variable=outputIndex complete dim=0
+
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tmpOut[7];
+    hls::stream<uint8_t>  indexStream[8];
+
+	cellExt<0>(in, tmpOut[0], initVal[0], indexStream[0]);
+	cellExt<1>(tmpOut[0], tmpOut[1], initVal[1], indexStream[1]);
+	cellExt<2>(tmpOut[1], tmpOut[2], initVal[2], indexStream[2]);
+	cellExt<3>(tmpOut[2], tmpOut[3], initVal[3], indexStream[3]);
+	cellExt<4>(tmpOut[3], tmpOut[4], initVal[4], indexStream[4]);
+	cellExt<5>(tmpOut[4], tmpOut[5], initVal[5], indexStream[5]);
+	cellExt<6>(tmpOut[5], tmpOut[6], initVal[6], indexStream[6]);
+	cellExt<7>(tmpOut[6], out, initVal[7], indexStream[7]);
+
+	for(uint8_t i = 0; i < 8; i ++)
+	{
+#pragma HLS UNROLL
+		outputIndex[i] = indexStream[i].read();
+	}
+}
+
+template<int UNUSE_PARAMETER>
+void cell(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > & in, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > & out,
+		hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > & localStream)
+{
+    static ap_uint< TS_TYPE_BIT_WIDTH > local = 0;
+    static uint8_t counter = 0;
+    ap_uint<TS_TYPE_BIT_WIDTH> in_copy = in.read();
+    if(in_copy > local) {
+        out.write(local);
+        local = in_copy;
+    }
+    else
+    {
+        out.write(in_copy);
+    }
+    counter++;
+    if(counter == 8)
+    {
+    	counter = 0;
+        localStream.write(local);
+    }
+}
+
+
+void insertionCells(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &in, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &out,
+		hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > localStream[8])
+{
+#pragma HLS DATAFLOW
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tmpOut[7];
+
+	cell<0>(in, tmpOut[0], localStream[0]);
+	cell<1>(tmpOut[0], tmpOut[1], localStream[1]);
+	cell<2>(tmpOut[1], tmpOut[2], localStream[2]);
+	cell<3>(tmpOut[2], tmpOut[3], localStream[3]);
+	cell<4>(tmpOut[3], tmpOut[4], localStream[4]);
+	cell<5>(tmpOut[4], tmpOut[5], localStream[5]);
+	cell<6>(tmpOut[5], tmpOut[6], localStream[6]);
+	cell<7>(tmpOut[6], out, localStream[7]);
+}
+
+void insertionCellSort(ap_uint<TS_TYPE_BIT_WIDTH> inData[20], ap_uint<TS_TYPE_BIT_WIDTH> outputData[20])
+{
+#pragma HLS DATAFLOW
+#pragma HLS ARRAY_PARTITION variable=outputData complete dim=0
+
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > inStream, outStream;
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > localStream[8];
+
+    for (uint8_t i = 0; i < 8; i++)
+    {
+#pragma HLS pipeline rewind
+    	inStream.write(inData[i]);
+    }
+
+	insertionCells(inStream, outStream, localStream);
+
+    for (uint8_t i = 0; i < 8; i++)
+    {
+#pragma HLS pipeline rewind
+    	ap_uint<TS_TYPE_BIT_WIDTH> tmp = outStream.read();
+    	outputData[i] = localStream[i].read();
+    }
+
+
+}
 
 template<int DATA_SIZE>
 void mergeArrays(ap_uint<TS_TYPE_BIT_WIDTH> in[DATA_SIZE], int width, ap_uint<TS_TYPE_BIT_WIDTH> out[DATA_SIZE]) {
@@ -421,7 +565,7 @@ radix_sort_step4:
 }
 
 
-void mergeArraysWithSize(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<8> width,  ap_uint<8> size, ap_uint<TS_TYPE_BIT_WIDTH> out[OUTER_SIZE])
+void mergeArraysWithSize(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<6> width,  ap_uint<5> size, ap_uint<TS_TYPE_BIT_WIDTH> out[OUTER_SIZE])
 {
 #pragma HLS FUNCTION_INSTANTIATE variable=width
 #pragma HLS FUNCTION_INSTANTIATE variable=size
@@ -429,10 +573,10 @@ void mergeArraysWithSize(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<8> w
   assert(size <= 20);
   if(size > width)
   {
-		int f1 = 0;
-	  int f2 = width;
-	  int i2 = width;
-	  int i3 = 2*width;
+	  ap_uint<6> f1 = 0;
+	  ap_uint<6> f2 = width;
+	  ap_uint<6> i2 = width;
+	  ap_uint<6> i3 = 2*width;
 	  if(i2 >= size) i2 = size;
 	  if(i3 >= size) i3 = size;
 	 merge_arrays:
@@ -490,13 +634,22 @@ void mergeSortParallelWithSize(ap_uint<TS_TYPE_BIT_WIDTH> A[OUTER_SIZE], ap_uint
 }
 
 
+void testMergeArrays(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<6> width,  ap_uint<5> size, ap_uint<TS_TYPE_BIT_WIDTH> out[OUTER_SIZE])
+{
+#pragma HLS DATAFLOW
 
+    ap_uint<TS_TYPE_BIT_WIDTH> temp[5-1][20];
+#pragma HLS ARRAY_PARTITION variable=temp complete dim=1
+
+	mergeArraysWithSize(in, 5, size, temp[0]);
+	mergeArraysWithSize(temp[0], 10, size, out);
+}
 
 void testSortHW(ap_uint<TS_TYPE_BIT_WIDTH> inputA[TEST_SORT_DATA_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outputB[TEST_SORT_DATA_SIZE])
 {
 //	 mergeSortParallel<TEST_SORT_DATA_SIZE, MERGE_STAGES> (inputA, outputB);
-//	insertionSortParallel<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
-	radixSort<TEST_SORT_DATA_SIZE, 1> (inputA, 16, outputB);
+	insertionSortParallel<TEST_SORT_DATA_SIZE, 1> (inputA, outputB);
+//	radixSort<TEST_SORT_DATA_SIZE, 1> (inputA, 16, outputB);
 }
 
 void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,

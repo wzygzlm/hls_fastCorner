@@ -26,13 +26,19 @@
 #define INNER_SIZE 16
 #define OUTER_SIZE 20
 
-#define TEST_SORT_DATA_SIZE 20
+#define TEST_SORT_DATA_SIZE 8
 
 #define MERGE_STAGES 5
 
 #define SYMBOL_BITS 5
 
-#define SIZE 16
+//#define SIZE 16
 void mergeSortParallelWithSize(ap_uint<TS_TYPE_BIT_WIDTH> A[OUTER_SIZE], ap_uint<8> num_symbols,  ap_uint<TS_TYPE_BIT_WIDTH> B[OUTER_SIZE]);
+void insertionCellSort(ap_uint<TS_TYPE_BIT_WIDTH> inData[20], ap_uint<TS_TYPE_BIT_WIDTH> outputData[20]);
+
+template<int DATA_SIZE, int NPC>
+void insertionSortParallel(ap_uint<TS_TYPE_BIT_WIDTH> A[DATA_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> B[DATA_SIZE]);
+
+void testSortHW(ap_uint<TS_TYPE_BIT_WIDTH> inputA[TEST_SORT_DATA_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outputB[TEST_SORT_DATA_SIZE]);
 
 #endif

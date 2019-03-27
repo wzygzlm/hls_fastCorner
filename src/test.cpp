@@ -83,6 +83,8 @@ int main ()
 //	        }
 //	    }
 
+//	    insertionCellSort(input, insertion_cell_output);
+	    testSortHW(input, insertion_cell_output);
 	    //sort the data using the insertion_sort function
 	    insertion_sortSW(input, size, insertion_output);
 	    mergeSortParallelWithSize(merge_sort_input, size, merge_sort_output);
@@ -90,12 +92,12 @@ int main ()
 	    //compare the results of insertion_sort to insertion_cell_sort; fail if they differ
 	    if(DEBUG) std::cout << "\nSorted Output\n";
 	    for(int i = 0; i < size; i++) {
-	        if(DEBUG) std::cout << merge_sort_output[i] << "\t";
+	        if(DEBUG) std::cout << insertion_cell_output[i] << "\t";
 	    }
 	    for(int i = 0; i < size; i++) {
-	        if(input[i] != merge_sort_output[i]) {
+	        if(input[i] != insertion_cell_output[i]) {
 	        	err_cnt = 1;
-	            std::cout << "golden= " << input[i] << " hw=" << merge_sort_output[i] << "\n";
+	            std::cout << "golden= " << input[i] << " hw=" << insertion_cell_output[i] << "\n";
 	        }
 	    }
 
