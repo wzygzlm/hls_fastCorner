@@ -423,7 +423,11 @@ radix_sort_step4:
 
 void mergeArraysWithSize(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<8> width,  ap_uint<8> size, ap_uint<TS_TYPE_BIT_WIDTH> out[OUTER_SIZE])
 {
-  if(size != 0)
+#pragma HLS FUNCTION_INSTANTIATE variable=width
+#pragma HLS FUNCTION_INSTANTIATE variable=size
+
+  assert(size <= 20);
+  if(size > width)
   {
 		int f1 = 0;
 	  int f2 = width;
@@ -433,7 +437,6 @@ void mergeArraysWithSize(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<8> w
 	  if(i3 >= size) i3 = size;
 	 merge_arrays:
 	  for (int i = 0; i < size; i++) {
-	#pragma HLS LOOP_TRIPCOUNT min=0 max=20
 	#pragma HLS PIPELINE II=1
 	      ap_uint<TS_TYPE_BIT_WIDTH> t1 = in[f1];
 	      ap_uint<TS_TYPE_BIT_WIDTH> t2 = in[f2];
@@ -455,14 +458,14 @@ void mergeArraysWithSize(ap_uint<TS_TYPE_BIT_WIDTH> in[OUTER_SIZE], ap_uint<8> w
 	     }
 	  }
   }
-//  else
-//  {
-//	  for (int i = 0; i < size; i++) {
-//	#pragma HLS LOOP_TRIPCOUNT min=0 max=20
-//	#pragma HLS PIPELINE II=1
-//		  out[i] = in[i];
-//	  }
-//  }
+  else
+  {
+	  for (int i = 0; i < size; i++) {
+	#pragma HLS LOOP_TRIPCOUNT min=0 max=20
+	#pragma HLS PIPELINE II=1
+		  out[i] = in[i];
+	  }
+  }
 }
 
 void mergeSortParallelWithSize(ap_uint<TS_TYPE_BIT_WIDTH> A[OUTER_SIZE], ap_uint<8> num_symbols,  ap_uint<TS_TYPE_BIT_WIDTH> B[OUTER_SIZE])

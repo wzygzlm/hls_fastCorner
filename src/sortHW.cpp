@@ -56,6 +56,21 @@ void insertion_sort_parallel(DTYPE A[SIZE], DTYPE B[SIZE]) {
     }
 }
 
+template<int UNUSE_PARAMETER>
+void cell(hls::stream<DTYPE> & in, hls::stream<DTYPE> & out)
+{
+    static DTYPE local = 0;
+    DTYPE in_copy = in.read();
+    if(in_copy > local) {
+        out.write(local);
+        local = in_copy;
+    }
+    else
+    {
+        out.write(in_copy);
+    }
+}
+
 void cell0(hls::stream<DTYPE> & in, hls::stream<DTYPE> & out)
 {
     static DTYPE local = 0;
@@ -174,14 +189,28 @@ void insertion_cell_sort(hls::stream<DTYPE> &in, hls::stream<DTYPE> &out)
     hls::stream<DTYPE> out6("out6 stream");
 
     // Function calls;
-    cell0(in, out0);
-    cell1(out0, out1);
-    cell2(out1, out2);
-    cell3(out2, out3);
-    cell4(out3, out4);
-    cell5(out4, out5);
-    cell6(out5, out6);
-    cell7(out6, out);
+//    cell0(in, out0);
+//    cell1(out0, out1);
+//    cell2(out1, out2);
+//    cell3(out2, out3);
+//    cell4(out3, out4);
+//    cell5(out4, out5);
+//    cell6(out5, out6);
+//    cell7(out6, out);
+
+
+    hls::stream<DTYPE> tmpOut[7];
+
+        cell<0>(in, tmpOut[0]);
+        cell<1>(tmpOut[0], tmpOut[1]);
+        cell<2>(tmpOut[1], tmpOut[2]);
+        cell<3>(tmpOut[2], tmpOut[3]);
+        cell<4>(tmpOut[3], tmpOut[4]);
+        cell<5>(tmpOut[4], tmpOut[5]);
+        cell<6>(tmpOut[5], tmpOut[6]);
+        cell<7>(tmpOut[6], out);
+
+
 }
 
 void merge_sort(DTYPE A[SIZE]) {
@@ -330,7 +359,7 @@ void radix_sort(
 }
 
 
-void testSort(ap_uint<20> inputA[16], ap_uint<20> outputB[16])
+void testSort(DTYPE inputA[16], DTYPE outputB[16])
 {
 	insertion_sort_parallel<1> (inputA, outputB);
 }

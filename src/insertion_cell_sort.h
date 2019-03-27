@@ -6,8 +6,8 @@
 #include "hls_stream.h"
 #include "ap_axi_sdata.h"
 
-#define DTYPE ap_uint<20>
-#define SIZE 16
+#define DTYPE ap_uint<32>
+#define SIZE 8
 #define STAGES 4
 #define SYMBOL_BITS 5
 
