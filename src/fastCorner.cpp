@@ -45,6 +45,41 @@ DATA_TYPE min(DATA_TYPE inArr[DATA_SIZE], int8_t *index)
 	return tmp;
 }
 
+// Function Description: return the idx of current data in the sorted data array.
+void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> tsData[OUTER_SIZE], ap_uint<5> *newIdx)
+{
+#pragma HLS ARRAY_PARTITION variable=tsData complete dim=0
+#pragma HLS PIPELINE
+#pragma HLS INLINE
+	*newIdx = 0;
+	for(uint8_t i = 0; i < OUTER_SIZE; i++ )
+	{
+		ap_uint<1> cond1 = (tsData[i] < oriData);  // Notice the difference between < and <= here.
+		*newIdx += cond1;
+	}
+}
+
+// Function Description: convert the current data array to sorted idx array.
+template<int NPC>
+void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> newIdx[OUTER_SIZE])
+{
+#pragma HLS INLINE
+	for(uint8_t i = 0; i < OUTER_SIZE; i = i + NPC)
+	{
+#pragma HLS PIPELINE rewind
+		for(uint8_t j = 0; j < NPC; j++)
+		{
+//			ap_uint<5> tmpIdx;
+			idxSorted(inData[i + j], inData, &newIdx[i + j]);
+//			newIdx[i + 0] = tmpIdx;
+		}
+	}
+}
+
+void testSortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> newIdx[OUTER_SIZE])
+{
+	sortedIdxData<2>(inData, newIdx);
+}
 
 ap_uint<TS_TYPE_BIT_WIDTH> readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
 {
