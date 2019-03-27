@@ -280,23 +280,34 @@ void insertionSortParallel(ap_uint<TS_TYPE_BIT_WIDTH> A[DATA_SIZE], ap_uint<TS_T
         for (int j = DATA_SIZE - 1; j >= 0; j--)
         {
         	ap_uint<TS_TYPE_BIT_WIDTH> t;
-        	if(j > i)
-        	{
-        		t = B[j];
-        	}
-        	else if(j > 0 && B[j - 1] > item)
-        	{
-        		t = B[j - 1];
-        	}
-        	else
-        	{
-        		t = item;
-        		if (j > 0)
-        		{
-        			item = B[j - 1];
-        		}
-        	}
-        	B[j] = t;
+
+        	ap_uint<1> cond1 = (j <= i) ? 1 : 0;
+        	ap_uint<1> cond2 = (j > 0) ? 1 : 0;
+        	ap_uint<1> cond3 = (cond2 && (B[j - 1] > item)) ? 1 : 0;
+
+//        	B[j] = (cond1 == 1 && cond3 == 1) ? B[j-1] : B[j];
+//        	B[j] = (cond1 == 1 && (cond3 == 0)) ? item : B[j];
+//        	item = (cond1 == 1 && cond2 == 1  && cond3 == 0) ? B[j-1]: item;
+
+        	if(cond1 == 1 && cond3 == 1) B[j] = B[j - 1];
+        	else if((cond1 == 1 && (cond3 == 0))) B[j] = item;
+        	if(cond1 == 1 && cond2 == 1  && cond3 == 0) item = B[j-1];
+
+//        	if(j <= i)
+//        	{
+//				if(j > 0 && B[j - 1] > item)
+//				{
+//					B[j] = B[j - 1];
+//				}
+//				else
+//				{
+//					B[j] = item;
+//					if (j > 0)
+//					{
+//						item = B[j - 1];
+//					}
+//				}
+//        	}
         }
     }
 }

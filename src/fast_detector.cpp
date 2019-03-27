@@ -176,6 +176,8 @@ ap_int<16> min(ap_int<16> inArr[2*SEARCH_DISTANCE + 1], int8_t *index)
 {
 #pragma HLS INLINE
 #pragma HLS PIPELINE
+#pragma HLS ARRAY_RESHAPE variable=inArr complete dim=1
+
 	ap_int<16> tmp = inArr[0];
 	int8_t tmpIdx = 0;
 	minLoop: for(int8_t i = 0; i < 2*SEARCH_DISTANCE + 1; i++)
