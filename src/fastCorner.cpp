@@ -76,6 +76,23 @@ void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> new
 	}
 }
 
+void checkIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
+{
+#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=4 dim=0
+	ap_uint<1> temp = 0;
+	for(uint8_t i = 0; i < OUTER_SIZE - 2; i = i + 1)
+	{
+#pragma HLS PIPELINE rewind
+		ap_uint<1> cond[4];
+		for (uint8_t j = 0; j < 4; j++)
+		{
+			cond[j] = (idxData[i + j] > OUTER_SIZE - 3);
+		}
+		temp = cond[0] + cond[1] + cond[2] + cond[3];
+	}
+	*isCorner = temp;
+}
+
 void testSortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> newIdx[OUTER_SIZE])
 {
 	sortedIdxData<2>(inData, newIdx);
