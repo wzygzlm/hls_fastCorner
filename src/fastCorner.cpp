@@ -76,27 +76,75 @@ void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> new
 	}
 }
 
-void checkIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
-{
-#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=4 dim=0
-	ap_uint<1> temp = 0;
-	for(uint8_t i = 0; i < OUTER_SIZE - 2; i = i + 1)
-	{
-#pragma HLS PIPELINE rewind
-		ap_uint<1> cond[4];
-		for (uint8_t j = 0; j < 4; j++)
-		{
-			cond[j] = (idxData[i + j] > OUTER_SIZE - 3);
-		}
-		temp = cond[0] + cond[1] + cond[2] + cond[3];
-	}
-	*isCorner = temp;
-}
-
 void testSortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> newIdx[OUTER_SIZE])
 {
 	sortedIdxData<2>(inData, newIdx);
 }
+
+template<int NPC>     // Set NPC >= 2
+void checkIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
+{
+	/* This is a good example to show the LUTs as a function of the NPC
+	 * Decreasing factor doesn't mean decreasing the performance.
+	 * In this example, change the partition from factor to completely, the LUTs will increase a lot.
+	 * The start index is fixed (always the multiple of NPC), so the partition could increase a lot.
+	 * Another very interesting thing here is that: if NPC equals to 1, then i become arbitrary again
+	 * which is not in a fixed pattern. In this case, multiplxer will be generated again.
+	 * The final expression LUTs# is about:  (NPC+2)*icmp + (NPC*2)*and + (NPC+1)*or + 2*adder.
+	 * */
+#pragma HLS INLINE
+#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
+
+	ap_uint<1> isCornerTemp = 0;
+	for(uint8_t i = 0; i < OUTER_SIZE - 2; i = i + NPC)
+	{
+#pragma HLS PIPELINE rewind
+		ap_uint<1> cond1[3 + NPC - 1];
+		for (uint8_t m = 0; m < NPC + 3; m++)
+		{
+			cond1[m] = (idxData[i + m] >= OUTER_SIZE - 3);
+		}
+
+		ap_uint<1> isCornerCond1 = 0;
+		ap_uint<1> tempCond1[NPC];
+
+		for (uint8_t k = 0; k < NPC; k++)
+		{
+			tempCond1[k] = 1;
+			for (uint8_t j = 0; j < 3; j++)
+			{
+				tempCond1[k] &= cond1[j + k];
+			}
+			isCornerTemp |= tempCond1[k];
+
+//			for (uint8_t j = 0; j < 4; j++)
+//			{
+//				temp |= (idxData[i + j + k] >= OUTER_SIZE - 4);
+//			}
+
+//			for (uint8_t j = 0; j < 5; j++)
+//			{
+//				temp |= (idxData[i + j + k] >= OUTER_SIZE - 5);
+//			}
+//
+//			for (uint8_t j = 0; j < 6; j++)
+//			{
+//				temp |= (idxData[i + j + k] >= OUTER_SIZE - 6);
+//			}
+
+		}
+
+		*isCorner = isCornerTemp ;
+	}
+}
+
+
+
+void testCheckIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
+{
+	checkIdx<4>(idxData, isCorner);
+}
+
 
 ap_uint<TS_TYPE_BIT_WIDTH> readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
 {

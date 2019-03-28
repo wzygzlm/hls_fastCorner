@@ -1,4 +1,4 @@
-<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="testSortedIdxData">
+<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="testCheckIdx">
     <includePaths/>
     <libraryPaths/>
     <Simulation>
