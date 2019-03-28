@@ -81,8 +81,8 @@ void testSortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5>
 	sortedIdxData<2>(inData, newIdx);
 }
 
-template<int NPC>     // Set NPC >= 2
-void checkIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
+template<int NPC>
+void checkInnerIdx(ap_uint<5> idxData[25], ap_uint<1> *isCorner)
 {
 	/* This is a good example to show the LUTs as a function of the NPC
 	 * Decreasing factor doesn't mean decreasing the performance.
@@ -90,47 +90,82 @@ void checkIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
 	 * The start index is fixed (always the multiple of NPC), so the partition could increase a lot.
 	 * Another very interesting thing here is that: if NPC equals to 1, then i become arbitrary again
 	 * which is not in a fixed pattern. In this case, multiplxer will be generated again.
-	 * The final expression LUTs# is about:  (NPC+2)*icmp + (NPC*2)*and + (NPC+1)*or + 2*adder.
+	 *
+	 * It's also a good example to compare the parameter cyclic and block here.
+	 *
+	 * The final expression LUTs# is about:  (NPC+2)*icmp + (NPC*2)*and + (NPC+1)*or + 2*adder for only streak length=3.
+	 * If multiple streaks are used, the formulation should be derived again.
+	 *
+	 * The max number of data read from the memory M should be less than 2*factor.
+	 * At the same time, NPC should be >= factor. Otherwise select will be synthesed.
+	 *
+	 * For example, if we the max streak lenght is 6, then the max number of data read from the memory is M = 6 + NPC - 1 = NPC + 5
+	 * If we set NPC=2, then factor can only be 1 or 2. Say we choose factor = 2, then M = 7 > 2 * 2. So this is not a good combination.
+	 * Set NPC = 4 and factor = 4, M = 9 still bigger than 2 * factor = 8.
+	 * So we should use NPC = 5 and factor = 5. The factor should be divided by the size (if size = 20), otherwise urem will be generated.
 	 * */
 #pragma HLS INLINE
 #pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
 
 	ap_uint<1> isCornerTemp = 0;
-	for(uint8_t i = 0; i < OUTER_SIZE - 2; i = i + NPC)
+	for(uint8_t i = 0; i < INNER_SIZE; i = i + NPC)
 	{
 #pragma HLS PIPELINE rewind
 		ap_uint<1> cond1[3 + NPC - 1];
-		for (uint8_t m = 0; m < NPC + 3; m++)
+		for (uint8_t m = 0; m < 3 + NPC - 1; m++)
 		{
-			cond1[m] = (idxData[i + m] >= OUTER_SIZE - 3);
+			cond1[m] = (idxData[i + m] >= INNER_SIZE - 3);
 		}
 
-		ap_uint<1> isCornerCond1 = 0;
-		ap_uint<1> tempCond1[NPC];
+		ap_uint<1> cond2[4 + NPC - 1];
+		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
+		{
+			cond2[m] = (idxData[i + m] >= INNER_SIZE - 4);
+		}
+
+		ap_uint<1> cond3[5 + NPC - 1];
+		for (uint8_t m = 0; m < 5 + NPC - 1; m++)
+		{
+			cond3[m] = (idxData[i + m] >= INNER_SIZE - 5);
+		}
+
+		ap_uint<1> cond4[6 + NPC - 1];
+		for (uint8_t m = 0; m < 6 + NPC - 1; m++)
+		{
+			cond4[m] = (idxData[i + m] >= INNER_SIZE - 6);
+		}
+
+		ap_uint<1> tempCond[4][NPC];
 
 		for (uint8_t k = 0; k < NPC; k++)
 		{
-			tempCond1[k] = 1;
+			tempCond[0][k] = 1;
 			for (uint8_t j = 0; j < 3; j++)
 			{
-				tempCond1[k] &= cond1[j + k];
+				tempCond[0][k] &= cond1[j + k];
 			}
-			isCornerTemp |= tempCond1[k];
+			isCornerTemp |= tempCond[0][k];
 
-//			for (uint8_t j = 0; j < 4; j++)
-//			{
-//				temp |= (idxData[i + j + k] >= OUTER_SIZE - 4);
-//			}
+			tempCond[1][k] = 1;
+			for (uint8_t j = 0; j < 4; j++)
+			{
+				tempCond[1][k] &= cond2[j + k];
+			}
+			isCornerTemp |= tempCond[1][k];
 
-//			for (uint8_t j = 0; j < 5; j++)
-//			{
-//				temp |= (idxData[i + j + k] >= OUTER_SIZE - 5);
-//			}
-//
-//			for (uint8_t j = 0; j < 6; j++)
-//			{
-//				temp |= (idxData[i + j + k] >= OUTER_SIZE - 6);
-//			}
+			tempCond[2][k] = 1;
+			for (uint8_t j = 0; j < 5; j++)
+			{
+				tempCond[2][k] &= cond3[j + k];
+			}
+			isCornerTemp |= tempCond[2][k];
+
+			tempCond[3][k] = 1;
+			for (uint8_t j = 0; j < 6; j++)
+			{
+				tempCond[3][k] &= cond4[j + k];
+			}
+			isCornerTemp |= tempCond[3][k];
 
 		}
 
@@ -142,7 +177,7 @@ void checkIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
 
 void testCheckIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
 {
-	checkIdx<4>(idxData, isCorner);
+	checkInnerIdx<5>(idxData, isCorner);
 }
 
 
