@@ -1,4 +1,4 @@
-<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="testCheckInnerIdx">
+<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="testCheckOuterIdx">
     <includePaths/>
     <libraryPaths/>
     <Simulation>
