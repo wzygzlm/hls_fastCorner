@@ -114,62 +114,43 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<1> *isCorner)
 	for(uint8_t i = 0; i < INNER_SIZE; i = i + NPC)
 	{
 #pragma HLS PIPELINE rewind
-		ap_uint<1> cond1[3 + NPC - 1];
+		ap_uint<1> cond[4][6 + NPC - 1];
 		for (uint8_t m = 0; m < 3 + NPC - 1; m++)
 		{
-			cond1[m] = (idxData[i + m] >= INNER_SIZE - 3);
+			cond[0][m] = (idxData[i + m] >= INNER_SIZE - 3);
 		}
 
 		ap_uint<1> cond2[4 + NPC - 1];
 		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
 		{
-			cond2[m] = (idxData[i + m] >= INNER_SIZE - 4);
+			cond[1][m] = (idxData[i + m] >= INNER_SIZE - 4);
 		}
 
 		ap_uint<1> cond3[5 + NPC - 1];
 		for (uint8_t m = 0; m < 5 + NPC - 1; m++)
 		{
-			cond3[m] = (idxData[i + m] >= INNER_SIZE - 5);
+			cond[2][m] = (idxData[i + m] >= INNER_SIZE - 5);
 		}
 
 		ap_uint<1> cond4[6 + NPC - 1];
 		for (uint8_t m = 0; m < 6 + NPC - 1; m++)
 		{
-			cond4[m] = (idxData[i + m] >= INNER_SIZE - 6);
+			cond[3][m] = (idxData[i + m] >= INNER_SIZE - 6);
 		}
 
 		ap_uint<1> tempCond[4][NPC];
 
 		for (uint8_t k = 0; k < NPC; k++)
 		{
-			tempCond[0][k] = 1;
-			for (uint8_t j = 0; j < 3; j++)
+			for (uint8_t n = 0; n < 4; n++)
 			{
-				tempCond[0][k] &= cond1[j + k];
+				tempCond[n][k] = 1;
+				for (uint8_t j = 0; j < 3 + n; j++)
+				{
+					tempCond[n][k] &= cond[n][j + k];
+				}
+				isCornerTemp |= tempCond[n][k];
 			}
-			isCornerTemp |= tempCond[0][k];
-
-			tempCond[1][k] = 1;
-			for (uint8_t j = 0; j < 4; j++)
-			{
-				tempCond[1][k] &= cond2[j + k];
-			}
-			isCornerTemp |= tempCond[1][k];
-
-			tempCond[2][k] = 1;
-			for (uint8_t j = 0; j < 5; j++)
-			{
-				tempCond[2][k] &= cond3[j + k];
-			}
-			isCornerTemp |= tempCond[2][k];
-
-			tempCond[3][k] = 1;
-			for (uint8_t j = 0; j < 6; j++)
-			{
-				tempCond[3][k] &= cond4[j + k];
-			}
-			isCornerTemp |= tempCond[3][k];
-
 		}
 
 		*isCorner = isCornerTemp ;
