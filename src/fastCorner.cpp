@@ -45,6 +45,37 @@ DATA_TYPE min(DATA_TYPE inArr[DATA_SIZE], int8_t *index)
 	return tmp;
 }
 
+// Function Description: convert ap_memory to several ap_none ports
+template<int NPC>
+void convertInterface(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> size, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &inStream)
+{
+#pragma HLS ARRAY_PARTITION variable=inData cyclic factor=NPC dim=0
+#pragma HLS INLINE off
+
+	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData;
+
+	for(uint8_t i = 0; i < size; i = i + NPC)
+	{
+#pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
+#pragma HLS PIPELINE rewind
+		for(uint8_t j = 0; j < NPC; j++)
+		{
+			for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
+			{
+#pragma HLS UNROLL
+				const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+				ap_uint<8 + bitOffset> colIdx;
+				// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+				colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>((i + j) * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+				colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+
+				tmpData[colIdx] = inData[i + j][yIndex];
+			}
+		}
+	}
+	inStream.write(tmpData);
+}
+
 // Function Description: return the idx of current data in the sorted data array.
 void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> tsData[OUTER_SIZE], ap_uint<5> *newIdx)
 {
@@ -61,11 +92,12 @@ void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> ts
 
 // Function Description: convert the current data array to sorted idx array.
 template<int NPC>
-void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> newIdx[OUTER_SIZE])
+void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
 #pragma HLS INLINE
-	for(uint8_t i = 0; i < OUTER_SIZE; i = i + NPC)
+	for(uint8_t i = 0; i < size; i = i + NPC)
 	{
+#pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
 #pragma HLS PIPELINE rewind
 		for(uint8_t j = 0; j < NPC; j++)
 		{
@@ -76,13 +108,72 @@ void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> new
 	}
 }
 
-void testSortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> newIdx[OUTER_SIZE])
+
+// Function Description: convert the current data array to sorted idx array.
+template<int NPC>
+void sortedIdxStream(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsStream, ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
-	sortedIdxData<2>(inData, newIdx);
+#pragma HLS INLINE off
+	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData = tsStream.read();
+	ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE];
+
+	for(uint8_t j = 0; j < OUTER_SIZE; j++)
+	{
+#pragma HLS UNROLL
+		for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
+		{
+#pragma HLS UNROLL
+			const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+			ap_uint<8 + bitOffset> colIdx;
+			// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+			colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(j * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+			colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+
+			inData[j][yIndex] = tmpData[colIdx];
+		}
+	}
+
+	for(uint8_t i = 0; i < size; i = i + NPC)
+	{
+#pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
+#pragma HLS PIPELINE rewind
+		for(uint8_t j = 0; j < NPC; j++)
+		{
+//			ap_uint<5> tmpIdx;
+			idxSorted(inData[i + j], inData, &newIdx[i + j]);
+//			newIdx[i + 0] = tmpIdx;
+		}
+	}
+}
+
+void testSortedIdxData(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsStream, ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
+{
+//	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData = tsStream.read();
+//	ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE];
+//
+//	for(uint8_t j = 0; j < OUTER_SIZE; j++)
+//	{
+//#pragma HLS UNROLL
+//		for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
+//		{
+//#pragma HLS UNROLL
+//			const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+//			ap_uint<8 + bitOffset> colIdx;
+//			// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+//			colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(j * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+//			colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+//
+//			inData[j][yIndex] = tmpData[colIdx];
+//		}
+//	}
+//
+//	sortedIdxData<1>(inData, size, newIdx);
+
+	sortedIdxStream<1>(tsStream, size, newIdx);
 }
 
 template<int NPC>
-void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<1> *isCorner)
+void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
 	/* This is a good example to show the LUTs as a function of the NPC
 	 * Decreasing factor doesn't mean decreasing the performance.
@@ -107,13 +198,13 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<1> *isCorner)
 	 * TODO: compare these cases: 1. the loop_count is the multiple of NPC 2. the loop count is not the multiple of NPC
 	 * 						      3. decrease M to make II = 1 under NPC = 4 and NPC = 2 to check the resource usage reducing.
 	 * */
-#pragma HLS INLINE
+#pragma HLS INLINE off
 #pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
-
 	ap_uint<1> isCornerTemp = 0;
 	for(uint8_t i = 0; i < INNER_SIZE; i = i + NPC)
 	{
-#pragma HLS PIPELINE rewind
+#pragma HLS LOOP_TRIPCOUNT min=0 max=16/NPC
+#pragma HLS PIPELINE
 		ap_uint<1> cond[4][6 + NPC - 1];
 		for (uint8_t m = 0; m < 3 + NPC - 1; m++)
 		{
@@ -216,14 +307,40 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
 	}
 }
 
-void testCheckInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<1> *isCorner)
+void testCheckInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
-	checkInnerIdx<5>(idxData, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkInnerIdx<5>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void testCheckOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
 {
 	checkOuterIdx<5>(idxData, isCorner);    // NPC = 7 could make II = 1 but we might not need so fast.
+}
+
+void checkIdx(ap_uint<5> inData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
+{
+	if(size == INNER_SIZE)
+	{
+		ap_uint<5> idxData[INNER_SIZE + 6 - 1];
+		for (uint8_t i = INNER_SIZE; i < INNER_SIZE + 6 - 1; i++)
+		{
+			idxData[i] = inData[i - INNER_SIZE];
+		}
+		checkInnerIdx<5>(idxData, size, isCorner);
+	}
+	else if(size == 20)
+	{
+		ap_uint<5> idxData[OUTER_SIZE + 8 - 1];
+		for (uint8_t i = OUTER_SIZE; i < OUTER_SIZE + 8 - 1; i++)
+		{
+			idxData[i] = inData[i - OUTER_SIZE];
+		}
+		checkOuterIdx<5>(idxData, isCorner);
+	}
+	else
+	{
+		*isCorner = 0;
+	}
 }
 
 ap_uint<TS_TYPE_BIT_WIDTH> readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
@@ -325,8 +442,9 @@ void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
 
 
 template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
-void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<8> *size)
+void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
 {
+#pragma HLS INLINE off
 	if(stage == 0)
 	{
 		updateSAE(x, y, ts);
@@ -849,7 +967,7 @@ void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uin
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> inner[INNER_SIZE];
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
-    ap_uint<8> size;
+    ap_uint<5> size;
     int8_t index;
     rwSAE<2>(x, y, ts, stage, outer, &size);
     mergeSortParallelWithSize(outer, size, outerSort);
@@ -871,16 +989,18 @@ ap_uint<TS_TYPE_BIT_WIDTH> fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE
 //		insertionSortParallel<OUTER_SIZE, 1>(outer, Outer_B);
 }
 
-void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1>  skip,
-		ap_uint<TS_TYPE_BIT_WIDTH> Inner_B[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE],
-		ap_uint<TS_TYPE_BIT_WIDTH> *minimum)
+void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner)
 {
-//	if(skip == 0)
-//	{
-//		*minimum = fastCornerInnerHW(x, y, ts, Inner_B);
-//	}
-//	else
-//	{
-//		*minimum = fastCornerOuterHW(x, y, Outer_B);
-//	}
+#pragma HLS DATAFLOW
+    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+    ap_uint<5> size;
+    ap_uint<5> idxData[OUTER_SIZE];
+
+    rwSAE<2>(x, y, ts, stage, outer, &size);
+    convertInterface<4>(outer, size, inStream);
+	sortedIdxStream<1>(inStream, size, idxData);
+	checkInnerIdx<5>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
