@@ -82,7 +82,7 @@ void testSortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5>
 }
 
 template<int NPC>
-void checkInnerIdx(ap_uint<5> idxData[25], ap_uint<1> *isCorner)
+void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<1> *isCorner)
 {
 	/* This is a good example to show the LUTs as a function of the NPC
 	 * Decreasing factor doesn't mean decreasing the performance.
@@ -102,7 +102,10 @@ void checkInnerIdx(ap_uint<5> idxData[25], ap_uint<1> *isCorner)
 	 * For example, if we the max streak lenght is 6, then the max number of data read from the memory is M = 6 + NPC - 1 = NPC + 5
 	 * If we set NPC=2, then factor can only be 1 or 2. Say we choose factor = 2, then M = 7 > 2 * 2. So this is not a good combination.
 	 * Set NPC = 4 and factor = 4, M = 9 still bigger than 2 * factor = 8.
-	 * So we should use NPC = 5 and factor = 5. The factor should be divided by the size (if size = 20), otherwise urem will be generated.
+	 * So we should use NPC = 5 and factor = 5. The factor should be divided by the size (if size = 20).
+	 *
+	 * TODO: compare these cases: 1. the loop_count is the multiple of NPC 2. the loop count is not the multiple of NPC
+	 * 						      3. decrease M to make II = 1 under NPC = 4 and NPC = 2 to check the resource usage reducing.
 	 * */
 #pragma HLS INLINE
 #pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
@@ -173,13 +176,99 @@ void checkInnerIdx(ap_uint<5> idxData[25], ap_uint<1> *isCorner)
 	}
 }
 
-
-
-void testCheckIdx(ap_uint<5> idxData[OUTER_SIZE], ap_uint<1> *isCorner)
+template<int NPC>
+void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
 {
-	checkInnerIdx<5>(idxData, isCorner);
+#pragma HLS INLINE
+#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
+
+	ap_uint<1> isCornerTemp = 0;
+	for(uint8_t i = 0; i < OUTER_SIZE; i = i + NPC)
+	{
+#pragma HLS PIPELINE rewind
+		ap_uint<1> cond1[4 + NPC - 1];
+		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
+		{
+			cond1[m] = (idxData[i + m] >= OUTER_SIZE - 4);
+		}
+
+		ap_uint<1> cond2[5 + NPC - 1];
+		for (uint8_t m = 0; m < 5 + NPC - 1; m++)
+		{
+			cond2[m] = (idxData[i + m] >= OUTER_SIZE - 5);
+		}
+
+		ap_uint<1> cond3[6 + NPC - 1];
+		for (uint8_t m = 0; m < 6 + NPC - 1; m++)
+		{
+			cond3[m] = (idxData[i + m] >= OUTER_SIZE - 6);
+		}
+
+		ap_uint<1> cond4[7 + NPC - 1];
+		for (uint8_t m = 0; m < 7 + NPC - 1; m++)
+		{
+			cond4[m] = (idxData[i + m] >= OUTER_SIZE - 7);
+		}
+
+		ap_uint<1> cond5[8 + NPC - 1];
+		for (uint8_t m = 0; m < 8 + NPC - 1; m++)
+		{
+			cond5[m] = (idxData[i + m] >= OUTER_SIZE - 8);
+		}
+
+		ap_uint<1> tempCond[5][NPC];
+
+		for (uint8_t k = 0; k < NPC; k++)
+		{
+			tempCond[0][k] = 1;
+			for (uint8_t j = 0; j < 4; j++)
+			{
+				tempCond[0][k] &= cond1[j + k];
+			}
+			isCornerTemp |= tempCond[0][k];
+
+			tempCond[1][k] = 1;
+			for (uint8_t j = 0; j < 5; j++)
+			{
+				tempCond[1][k] &= cond2[j + k];
+			}
+			isCornerTemp |= tempCond[1][k];
+
+			tempCond[2][k] = 1;
+			for (uint8_t j = 0; j < 6; j++)
+			{
+				tempCond[2][k] &= cond3[j + k];
+			}
+			isCornerTemp |= tempCond[2][k];
+
+			tempCond[3][k] = 1;
+			for (uint8_t j = 0; j < 7; j++)
+			{
+				tempCond[3][k] &= cond4[j + k];
+			}
+			isCornerTemp |= tempCond[3][k];
+
+			tempCond[4][k] = 1;
+			for (uint8_t j = 0; j < 8; j++)
+			{
+				tempCond[4][k] &= cond5[j + k];
+			}
+			isCornerTemp |= tempCond[4][k];
+		}
+
+		*isCorner = isCornerTemp ;
+	}
 }
 
+void testCheckInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<1> *isCorner)
+{
+	checkInnerIdx<5>(idxData, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+}
+
+void testCheckOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
+{
+	checkOuterIdx<5>(idxData, isCorner);    // NPC = 7 could make II = 1 but we might not need so fast.
+}
 
 ap_uint<TS_TYPE_BIT_WIDTH> readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
 {
