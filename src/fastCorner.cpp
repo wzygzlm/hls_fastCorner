@@ -52,7 +52,7 @@ void convertInterface(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> 
 #pragma HLS ARRAY_PARTITION variable=inData cyclic factor=NPC dim=0
 #pragma HLS INLINE off
 
-	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData;
+	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData = 0;
 
 	for(uint8_t i = 0; i < size; i = i + NPC)
 	{
@@ -94,7 +94,7 @@ void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> ts
 template<int NPC>
 void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
-#pragma HLS INLINE
+#pragma HLS INLINE off
 	for(uint8_t i = 0; i < size; i = i + NPC)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
@@ -167,9 +167,9 @@ void testSortedIdxData(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &t
 //		}
 //	}
 //
-//	sortedIdxData<1>(inData, size, newIdx);
+//	sortedIdxData<2>(inData, size, newIdx);
 
-	sortedIdxStream<1>(tsStream, size, newIdx);
+	sortedIdxStream<2>(tsStream, size, newIdx);
 }
 
 template<int NPC>
@@ -201,6 +201,11 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 #pragma HLS INLINE off
 #pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
 	ap_uint<1> isCornerTemp = 0;
+	if (size == 0)
+	{
+		*isCorner = isCornerTemp;
+		return;
+	}
 	for(uint8_t i = 0; i < INNER_SIZE; i = i + NPC)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=0 max=16/NPC
@@ -1001,6 +1006,6 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
 
     rwSAE<2>(x, y, ts, stage, outer, &size);
     convertInterface<4>(outer, size, inStream);
-	sortedIdxStream<1>(inStream, size, idxData);
+	sortedIdxStream<2>(inStream, size, idxData);
 	checkInnerIdx<5>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
