@@ -122,19 +122,43 @@ void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> ts
 //	*newIdx = temp;
 //}
 
+
+void sortedTest(ap_uint<5> oriIdx, ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> *newIdx)
+{
+#pragma HLS ARRAY_PARTITION variable=inData complete dim=0
+#pragma HLS PIPELINE
+#pragma HLS INLINE
+	ap_uint<5> temp = 0;
+	for(uint8_t i = 0; i < OUTER_SIZE; i++ )
+	{
+		ap_uint<1> cond1 = (inData[i] < inData[oriIdx]);  // Notice the difference between < and <= here.
+		temp += cond1;
+		if (size == INNER_SIZE && i == INNER_SIZE - 1)
+		{
+			*newIdx = temp;
+			return;
+		}
+	}
+	*newIdx = temp;
+}
+
+
+
 // Function Description: convert the current data array to sorted idx array.
 template<int NPC>
 void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
-#pragma HLS INLINE off
+#pragma HLS INLINE
+//#pragma HLS ARRAY_PARTITION variable=newIdx complete dim=0
 	for(uint8_t i = 0; i < size; i = i + NPC)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
-#pragma HLS PIPELINE rewind
+#pragma HLS PIPELINE
 		for(uint8_t j = 0; j < NPC; j++)
 		{
 //			ap_uint<5> tmpIdx;
-			idxSorted(inData[i + j], inData, size, &newIdx[i + j]);
+//			idxSorted(inData[i + j], inData, size, &newIdx[i + j]);
+			sortedTest(i + j, inData, size, &newIdx[i + j]);
 //			newIdx[i + 0] = tmpIdx;
 		}
 	}
@@ -180,8 +204,11 @@ void sortedIdxStream(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsS
 
 void testSortedIdxData(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsStream, ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
+#pragma HLS ARRAY_PARTITION variable=newIdx complete dim=0
+
 	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData = tsStream.read();
 	ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE];
+
 
 	for(uint8_t j = 0; j < OUTER_SIZE; j++)
 	{
@@ -231,7 +258,7 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 	 * 						      3. decrease M to make II = 1 under NPC = 4 and NPC = 2 to check the resource usage reducing.
 	 * */
 #pragma HLS INLINE off
-#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
+#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=2 dim=0
 	ap_uint<1> isCornerTemp = 0;
 	if (size == 0)
 	{
@@ -1037,7 +1064,9 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
     ap_uint<5> idxData[OUTER_SIZE];
 
     rwSAE<2>(x, y, ts, stage, outer, &size);
+//    sortedIdxData<2>(outer, size, idxData);
     convertInterface<4>(outer, size, inStream);
 	sortedIdxStream<2>(inStream, size, idxData);
-	checkInnerIdx<5>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
+

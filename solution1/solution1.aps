@@ -6,7 +6,7 @@
         <DownStreamTool name=""/>
     </downStreamTool>
     <config>
-        <schedule model="sortedIdxData"/>
+        <schedule model="tempSorted"/>
     </config>
     <UIConfigurations>
         <UIAutosynConf hideTrivialOp="true" isBasedOnBoard="false" isSolutionDirty="true" isStopAskAgain="false" showDetailDesignViewer="false">
