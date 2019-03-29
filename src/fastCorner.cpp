@@ -77,18 +77,50 @@ void convertInterface(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> 
 }
 
 // Function Description: return the idx of current data in the sorted data array.
-void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> tsData[OUTER_SIZE], ap_uint<5> *newIdx)
+void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> tsData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> *newIdx)
 {
 #pragma HLS ARRAY_PARTITION variable=tsData complete dim=0
 #pragma HLS PIPELINE
 #pragma HLS INLINE
-	*newIdx = 0;
+	ap_uint<5> temp = 0;
 	for(uint8_t i = 0; i < OUTER_SIZE; i++ )
 	{
 		ap_uint<1> cond1 = (tsData[i] < oriData);  // Notice the difference between < and <= here.
-		*newIdx += cond1;
+		temp += cond1;
+		if (size == INNER_SIZE && i == INNER_SIZE - 1)
+		{
+			*newIdx = temp;
+			return;
+		}
 	}
+	*newIdx = temp;
 }
+
+// Function Description: return the idx of current data in the sorted data array.
+//void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> tsData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> *newIdx)
+//{
+//#pragma HLS ARRAY_PARTITION variable=tsData cyclic factor=8 dim=0
+//#pragma HLS INLINE
+//	assert(size==16||size==20||size==0);
+//	if(size == 0)
+//	{
+//		*newIdx = 0;
+//		return;
+//	}
+//
+//	ap_uint<5> temp = 0;
+//	for(uint8_t i = 0; i < size; i = i + 16 )
+//	{
+//#pragma HLS PIPELINE
+//#pragma HLS LOOP_TRIPCOUNT min=0 max=2
+//		for(uint8_t j = 0; j < 16; j++)
+//		{
+//			ap_uint<1> cond1 = (tsData[i + j] < oriData);  // Notice the difference between < and <= here.
+//			temp += cond1;
+//		}
+//	}
+//	*newIdx = temp;
+//}
 
 // Function Description: convert the current data array to sorted idx array.
 template<int NPC>
@@ -102,7 +134,7 @@ void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> siz
 		for(uint8_t j = 0; j < NPC; j++)
 		{
 //			ap_uint<5> tmpIdx;
-			idxSorted(inData[i + j], inData, &newIdx[i + j]);
+			idxSorted(inData[i + j], inData, size, &newIdx[i + j]);
 //			newIdx[i + 0] = tmpIdx;
 		}
 	}
@@ -140,7 +172,7 @@ void sortedIdxStream(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsS
 		for(uint8_t j = 0; j < NPC; j++)
 		{
 //			ap_uint<5> tmpIdx;
-			idxSorted(inData[i + j], inData, &newIdx[i + j]);
+			idxSorted(inData[i + j], inData, size, &newIdx[i + j]);
 //			newIdx[i + 0] = tmpIdx;
 		}
 	}
@@ -148,28 +180,28 @@ void sortedIdxStream(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsS
 
 void testSortedIdxData(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsStream, ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
-//	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData = tsStream.read();
-//	ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE];
-//
-//	for(uint8_t j = 0; j < OUTER_SIZE; j++)
-//	{
-//#pragma HLS UNROLL
-//		for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
-//		{
-//#pragma HLS UNROLL
-//			const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-//			ap_uint<8 + bitOffset> colIdx;
-//			// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-//			colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(j * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-//			colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-//
-//			inData[j][yIndex] = tmpData[colIdx];
-//		}
-//	}
-//
-//	sortedIdxData<2>(inData, size, newIdx);
+	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData = tsStream.read();
+	ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE];
 
-	sortedIdxStream<2>(tsStream, size, newIdx);
+	for(uint8_t j = 0; j < OUTER_SIZE; j++)
+	{
+#pragma HLS UNROLL
+		for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
+		{
+#pragma HLS UNROLL
+			const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+			ap_uint<8 + bitOffset> colIdx;
+			// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+			colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(j * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+			colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+
+			inData[j][yIndex] = tmpData[colIdx];
+		}
+	}
+
+	sortedIdxData<2>(inData, size, newIdx);
+
+//	sortedIdxStream<2>(tsStream, size, newIdx);
 }
 
 template<int NPC>
