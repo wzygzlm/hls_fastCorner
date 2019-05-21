@@ -16,6 +16,18 @@ const static int MAX_NUMBER=1000;
 #define DTYPE ap_uint<32>
 #define TEST_TIMES 20
 
+// SAE (Surface of Active Event)
+static uint32_t saeSW[1][DVS_HEIGHT][DVS_WIDTH];
+
+const int innerCircleOffset[INNER_SIZE][2] = {{0, 3}, {1, 3}, {2, 2}, {3, 1},
+      {3, 0}, {3, -1}, {2, -2}, {1, -3},
+      {0, -3}, {-1, -3}, {-2, -2}, {-3, -1},
+      {-3, 0}, {-3, 1}, {-2, 2}, {-1, 3}};
+const int outerCircleOffset[OUTER_SIZE][2] = {{0, 4}, {1, 4}, {2, 3}, {3, 2},
+      {4, 1}, {4, 0}, {4, -1}, {3, -2},
+      {2, -3}, {1, -4}, {0, -4}, {-1, -4},
+      {-2, -3}, {-3, -2}, {-4, -1}, {-4, 0},
+      {-4, 1}, {-3, 2}, {-2, 3}, {-1, 4}};
 
 void insertion_sortSW(ap_uint<TS_TYPE_BIT_WIDTH> A[20], int size, ap_uint<TS_TYPE_BIT_WIDTH> sortOut[20]) {
     L1:
@@ -87,6 +99,28 @@ void sortedIndex(ap_uint<TS_TYPE_BIT_WIDTH> A[20], int size, ap_uint<5> sortOut[
 }
 
 
+void rwSAESW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
+{
+	saeSW[0][y][x] = ts;
+	for(ap_uint<8> i = 0; i < OUTER_SIZE; i = i + 1)
+	{
+		outputData[i] = saeSW[0][y][x];
+	}
+
+	if(stage == 0)
+	{
+		*size = INNER_SIZE;
+	}
+	else if(stage == 1)
+	{
+		*size = OUTER_SIZE;
+	}
+	else
+	{
+		*size = 0;
+	}
+}
+
 
 int main ()
 {
@@ -95,38 +129,37 @@ int main ()
     int total_err_cnt = 0;
 	int retval=0;
 
-	/******************* Test SortedIdxData module from random value**************************/
-	ap_uint<TS_TYPE_BIT_WIDTH> input[OUTER_SIZE];
-	ap_uint<5> outputSortedIdxHW[OUTER_SIZE], outputSortedIdxSW[OUTER_SIZE];
+	/******************* Test rwSAE module from random value**************************/
+	srand((unsigned)time(NULL));
+	int16_t eventCnt = 500;
+
+	uint32_t x, y;
+	uint32_t ts[eventCnt];
+
 	for(int k = 0; k < TEST_TIMES; k++)
 	{
 		cout << "Test " << k << ":" << endl;
 
 		int err_cnt = 0;
 
-		//generate random data to sort
-		if(DEBUG) std::cout << "Random Input Data\n";
-		int size = rand()%20;
-		size = 20;
-		for(int i = 0; i < size; i++) {
-			input[i] = rand() % MAX_NUMBER + 1;
-			if(DEBUG) std::cout << input[i] << "\t";
+ 		for (int i = 0; i < eventCnt; i++)
+		{
+ 			ts[i]  = rand();
 		}
 
-		testSortedIdxData(input, outputSortedIdxHW);
-		sortedIndex(input, size, outputSortedIdxSW);
+ 		for (int i = 0; i < eventCnt; i++)
+		{
+			x = rand()%20;
+			y = rand()%20;
+//			idx = rand()%3;
+	//		x = 255;
+	//		y = 240;
+//			cout << "x : " << x << endl;
+//			cout << "y : " << y << endl;
+//			cout << "idx : " << idx << endl;
 
-		//compare the results of insertion_sort to insertion_cell_sort; fail if they differ
-		if(DEBUG) std::cout << "\nSorted Output\n";
-		for(int i = 0; i < size; i++) {
-			if(DEBUG) std::cout << outputSortedIdxHW[i] << "\t";
-		}
-		for(int i = 0; i < size; i++) {
-			if(outputSortedIdxSW[i] != outputSortedIdxHW[i]) {
-				std::cout << "\n";
-				err_cnt = 1;
-				std::cout << "golden= " << outputSortedIdxSW[i] << " hw=" << outputSortedIdxHW[i] << "\n";
-			}
+//			data[i] = (uint64_t)(x << 17) + (uint64_t)(y << 2) + (1 << 1);
+//			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
 		}
 
 		if(err_cnt == 0)
@@ -136,6 +169,48 @@ int main ()
 		total_err_cnt += err_cnt;
 		cout << endl;
 	}
+
+	/******************* Test SortedIdxData module from random value**************************/
+//	ap_uint<TS_TYPE_BIT_WIDTH> input[OUTER_SIZE];
+//	ap_uint<5> outputSortedIdxHW[OUTER_SIZE], outputSortedIdxSW[OUTER_SIZE];
+//	for(int k = 0; k < TEST_TIMES; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+//		//generate random data to sort
+//		if(DEBUG) std::cout << "Random Input Data\n";
+//		int size = rand()%20;
+//		size = 20;
+//		for(int i = 0; i < size; i++) {
+//			input[i] = rand() % MAX_NUMBER + 1;
+//			if(DEBUG) std::cout << input[i] << "\t";
+//		}
+//
+//		testSortedIdxData(input, outputSortedIdxHW);
+//		sortedIndex(input, size, outputSortedIdxSW);
+//
+//		//compare the results of insertion_sort to insertion_cell_sort; fail if they differ
+//		if(DEBUG) std::cout << "\nSorted Output\n";
+//		for(int i = 0; i < size; i++) {
+//			if(DEBUG) std::cout << outputSortedIdxHW[i] << "\t";
+//		}
+//		for(int i = 0; i < size; i++) {
+//			if(outputSortedIdxSW[i] != outputSortedIdxHW[i]) {
+//				std::cout << "\n";
+//				err_cnt = 1;
+//				std::cout << "golden= " << outputSortedIdxSW[i] << " hw=" << outputSortedIdxHW[i] << "\n";
+//			}
+//		}
+//
+//		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 	/******************* Test sort module from random value**************************/
 //    srand((unsigned)time(NULL)); //change me if you want different numbers
 //	srand(20);
