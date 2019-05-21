@@ -146,6 +146,12 @@ int main ()
 		{
  			ts[i]  = rand();
 		}
+ 	    sort(ts, ts+eventCnt);
+
+ 	    cout << "\nArray after sorting using "
+ 	         "default sort is : \n";
+ 	    for (int i = 0; i < eventCnt; ++i)
+ 	        cout << ts[i] << " ";
 
  		for (int i = 0; i < eventCnt; i++)
 		{
