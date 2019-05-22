@@ -101,18 +101,22 @@ void sortedIndexSW(ap_uint<TS_TYPE_BIT_WIDTH> A[20], int size, ap_uint<5> sortOu
 
 void rwSAESW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
 {
-	saeSW[0][y][x] = ts;
-	for(ap_uint<8> i = 0; i < OUTER_SIZE; i = i + 1)
-	{
-		outputData[i] = saeSW[0][y][x];
-	}
 
 	if(stage == 0)
 	{
+		saeSW[0][y][x] = ts;
+		for(ap_uint<8> i = 0; i < INNER_SIZE; i = i + 1)
+		{
+			outputData[i] = saeSW[0][y + innerCircleOffset[i][1]][x + innerCircleOffset[i][0]];
+		}
 		*size = INNER_SIZE;
 	}
 	else if(stage == 1)
 	{
+		for(ap_uint<8> i = 0; i < OUTER_SIZE; i = i + 1)
+		{
+			outputData[i] = saeSW[0][y + outerCircleOffset[i][1]][x + outerCircleOffset[i][0]];
+		}
 		*size = OUTER_SIZE;
 	}
 	else
@@ -152,8 +156,8 @@ int main ()
 
 // 	    cout << "\nArray after sorting using "
 // 	         "default sort is : \n";
- 	    for (int i = 0; i < eventCnt; ++i)
- 	        cout << ts[i] << " ";
+// 	    for (int i = 0; i < eventCnt; ++i)
+// 	        cout << ts[i] << " ";
 
  		for (int i = 0; i < eventCnt; i++)
 		{
@@ -168,10 +172,18 @@ int main ()
 
 //			data[i] = (uint64_t)(x << 17) + (uint64_t)(y << 2) + (1 << 1);
 //			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
+	 		rwSAESW(x, y, ts[i], 1, outputDataSW, &sizeSW);
+	 		testRwSAEHW(x, y, ts[i], 1, outputDataHW, &sizeHW);
+
+	 		for (int  j = 0; j < OUTER_SIZE; j++)
+	 		{
+	 			if (outputDataSW[j] != outputDataHW[j])
+	 			{
+	 				err_cnt++;
+	 			}
+	 		}
 		}
 
- 		rwSAESW(x, y, (ap_uint<TS_TYPE_BIT_WIDTH>)ts, 0, outputDataSW, &sizeSW);
- 		testRwSAEHW(x, y, (ap_uint<TS_TYPE_BIT_WIDTH>)ts, 0, outputDataHW, &sizeHW);
 
  		if(err_cnt == 0)
 		{
