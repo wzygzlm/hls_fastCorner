@@ -1025,6 +1025,11 @@ void testSortHW(ap_uint<TS_TYPE_BIT_WIDTH> inputA[TEST_SORT_DATA_SIZE], ap_uint<
 //	radixSort<TEST_SORT_DATA_SIZE, 1> (inputA, 16, outputB);
 }
 
+void testRwSAEHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
+{
+    rwSAE<2>(x, y, ts, stage, outputData, size);
+}
+
 void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 		ap_uint<TS_TYPE_BIT_WIDTH> innerSort[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outerSort[OUTER_SIZE])
 {

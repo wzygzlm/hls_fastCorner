@@ -85,7 +85,7 @@ ap_uint<5> findPos(ap_uint<TS_TYPE_BIT_WIDTH> arr[], ap_uint<TS_TYPE_BIT_WIDTH> 
     return binarySearch(arr, l, h, key);
 }
 
-void sortedIndex(ap_uint<TS_TYPE_BIT_WIDTH> A[20], int size, ap_uint<5> sortOut[20])
+void sortedIndexSW(ap_uint<TS_TYPE_BIT_WIDTH> A[20], int size, ap_uint<5> sortOut[20])
 {
 	for(int i = 0; i < size; i++)
 	{
@@ -132,6 +132,8 @@ int main ()
 	/******************* Test rwSAE module from random value**************************/
 	srand((unsigned)time(NULL));
 	int16_t eventCnt = 500;
+	ap_uint<TS_TYPE_BIT_WIDTH> outputDataSW[OUTER_SIZE], outputDataHW[OUTER_SIZE];
+	ap_uint<5> sizeSW, sizeHW;
 
 	uint32_t x, y;
 	uint32_t ts[eventCnt];
@@ -148,8 +150,8 @@ int main ()
 		}
  	    sort(ts, ts+eventCnt);
 
- 	    cout << "\nArray after sorting using "
- 	         "default sort is : \n";
+// 	    cout << "\nArray after sorting using "
+// 	         "default sort is : \n";
  	    for (int i = 0; i < eventCnt; ++i)
  	        cout << ts[i] << " ";
 
@@ -168,7 +170,10 @@ int main ()
 //			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
 		}
 
-		if(err_cnt == 0)
+ 		rwSAESW(x, y, (ap_uint<TS_TYPE_BIT_WIDTH>)ts, 0, outputDataSW, &sizeSW);
+ 		testRwSAEHW(x, y, (ap_uint<TS_TYPE_BIT_WIDTH>)ts, 0, outputDataHW, &sizeHW);
+
+ 		if(err_cnt == 0)
 		{
 			cout << "Test " << k << " passed." << endl;
 		}
