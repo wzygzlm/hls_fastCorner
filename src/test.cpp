@@ -127,7 +127,7 @@ void rwSAESW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stag
 
 
 int main ()
-{
+ {
 	int testTimes = TEST_TIMES;
 
     int total_err_cnt = 0;
@@ -161,8 +161,8 @@ int main ()
 
  		for (int i = 0; i < eventCnt; i++)
 		{
-			x = rand()%20;
-			y = rand()%20;
+			x = rand()%50 + 20;
+			y = rand()%50 + 20;
 //			idx = rand()%3;
 	//		x = 255;
 	//		y = 240;
@@ -179,7 +179,7 @@ int main ()
 	 		{
 	 			if (outputDataSW[j] != outputDataHW[j])
 	 			{
-	 				err_cnt++;
+ 	 				err_cnt++;
 	 			}
 	 		}
 		}
