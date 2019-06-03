@@ -305,9 +305,15 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 					tempCond[n][k] &= cond[n][j + k];
 				}
 				isCornerTemp |= tempCond[n][k];
+
+				if (isCornerTemp == 1)
+				{
+					*isCorner = isCornerTemp ;
+					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
+					return;
+				}
 			}
 		}
-
 		*isCorner = isCornerTemp ;
 	}
 }
@@ -1028,6 +1034,29 @@ void testSortHW(ap_uint<TS_TYPE_BIT_WIDTH> inputA[TEST_SORT_DATA_SIZE], ap_uint<
 void testRwSAEHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
 {
     rwSAE<2>(x, y, ts, stage, outputData, size);
+}
+
+
+void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
+{
+#pragma HLS DATAFLOW
+    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+    ap_uint<5> idxData[OUTER_SIZE];
+
+    convertInterface<4>(inputRawData, size, inStream);
+	sortedIdxStream<2>(inStream, size, idxData);
+
+	std::cout << "Idx Data HW is: " << std::endl;
+	for (int i = 0; i < size; i++)
+	{
+		std::cout << (int)idxData[i]<< "\t";
+	}
+	std::cout << std::endl;
+
+	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,

@@ -14,7 +14,7 @@ using namespace std;
 const static int DEBUG=1;
 const static int MAX_NUMBER=1000;
 #define DTYPE ap_uint<32>
-#define TEST_TIMES 20
+#define TEST_TIMES 200
 
 // SAE (Surface of Active Event)
 static uint32_t saeSW[1][DVS_HEIGHT][DVS_WIDTH];
@@ -126,21 +126,109 @@ void rwSAESW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stag
 }
 
 
+// Compares two intervals according to staring times.
+bool compareInterval(pair<uint32_t, int> i1, pair<uint32_t, int> i2)
+{
+    return (i1.first < i2.first);
+}
+
+
+void sortArr(uint32_t arr[], int n, uint8_t outputIdx[])
+{
+
+    // Vector to store element
+    // with respective present index
+    vector<pair<uint32_t, int> > vp;
+
+    // Inserting element in pair vector
+    // to keep track of previous indexes
+    for (int i = 0; i < n; ++i) {
+        vp.push_back(make_pair(arr[i], i));
+    }
+
+    // Sorting pair vector
+    sort(vp.begin(), vp.end(), compareInterval);
+
+    // Displaying sorted element
+    // with previous indexes
+    // corresponding to each element
+//    cout << "Element\t"
+//         << "index" << endl;
+    for (int i = 0; i < vp.size(); i++) {
+    	outputIdx[vp[i].second] = i;
+        cout << vp[i].first << "\t"
+             << vp[i].second << "\t" << i << endl;
+    }
+}
+
+void testConvertandSortedIdxSW(uint32_t rawData[OUTER_SIZE], uint8_t size, uint8_t outputIdxData[OUTER_SIZE])
+{
+	assert(size <= OUTER_SIZE);
+	cout << "Raw Data is: " << endl;
+	for (int i = 0; i < size; i++)
+	{
+		cout << rawData[i] << "\t";
+	}
+	cout << endl;
+
+	sortArr(rawData, size, outputIdxData);
+
+	cout << "Idx Data SW is: " << endl;
+	for (int i = 0; i < size; i++)
+	{
+		cout << (int)outputIdxData[i]<< "\t";
+	}
+	cout << endl;
+}
+
+void testFromTsDataCheckInnerCornerSW(uint32_t rawData[OUTER_SIZE], uint8_t size, ap_uint<1> *isCorner)
+{
+	uint8_t idxData[INNER_SIZE];
+
+	testConvertandSortedIdxSW(rawData, INNER_SIZE, idxData);
+
+	*isCorner = 0;
+
+	for (int streak_size = 3; streak_size<=6; streak_size++)
+	{
+		for (uint8_t i = 0; i < INNER_SIZE; i++)
+		{
+			ap_uint<1> tempCond = 1;
+			uint8_t j =  0;
+			for (j =  0; j < streak_size; j++)
+			{
+				uint8_t tmpData = ((i + j) >= INNER_SIZE) ? idxData[i + j - INNER_SIZE] : idxData[i + j];
+				tempCond &= (tmpData >= (INNER_SIZE - streak_size));
+			}
+			if (tempCond == 1)
+			{
+				*isCorner = 1;
+				cout << "Position is :" << (int)i << " and streak size is: " << (int)j << endl;
+				return;
+			}
+		}
+	}
+
+}
+
 int main ()
  {
 	int testTimes = TEST_TIMES;
 
     int total_err_cnt = 0;
 	int retval=0;
+	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
+//	srand((unsigned)time(NULL));
 
-	/******************* Test rwSAE module from random value**************************/
-	srand((unsigned)time(NULL));
-	int16_t eventCnt = 500;
-	ap_uint<TS_TYPE_BIT_WIDTH> outputDataSW[OUTER_SIZE], outputDataHW[OUTER_SIZE];
-	ap_uint<5> sizeSW, sizeHW;
+    // The raw data for SW and HW are exactly the same, except the data type.
+	uint32_t testRawDataSW[OUTER_SIZE];
+	ap_uint<32> testRawDataHW[OUTER_SIZE];
+//	uint8_t outputIdxSW[OUTER_SIZE];
+//	ap_uint<5> outputIdxHW[OUTER_SIZE];
 
-	uint32_t x, y;
-	uint32_t ts[eventCnt];
+	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
+
+	uint8_t size = INNER_SIZE;
 
 	for(int k = 0; k < TEST_TIMES; k++)
 	{
@@ -148,50 +236,94 @@ int main ()
 
 		int err_cnt = 0;
 
- 		for (int i = 0; i < eventCnt; i++)
+ 		for (int i = 0; i < size; i++)
 		{
- 			ts[i]  = rand();
-		}
- 	    sort(ts, ts+eventCnt);
-
-// 	    cout << "\nArray after sorting using "
-// 	         "default sort is : \n";
-// 	    for (int i = 0; i < eventCnt; ++i)
-// 	        cout << ts[i] << " ";
-
- 		for (int i = 0; i < eventCnt; i++)
-		{
-			x = rand()%50 + 20;
-			y = rand()%50 + 20;
-//			idx = rand()%3;
-	//		x = 255;
-	//		y = 240;
-//			cout << "x : " << x << endl;
-//			cout << "y : " << y << endl;
-//			cout << "idx : " << idx << endl;
-
-//			data[i] = (uint64_t)(x << 17) + (uint64_t)(y << 2) + (1 << 1);
-//			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
-	 		rwSAESW(x, y, ts[i], 1, outputDataSW, &sizeSW);
-	 		testRwSAEHW(x, y, ts[i], 1, outputDataHW, &sizeHW);
-
-	 		for (int  j = 0; j < OUTER_SIZE; j++)
-	 		{
-	 			if (outputDataSW[j] != outputDataHW[j])
-	 			{
- 	 				err_cnt++;
-	 			}
-	 		}
+ 			testRawDataSW[i]  = rand();
+ 			testRawDataHW[i] = testRawDataSW[i];
 		}
 
+ 		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
+ 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
+
+		cout << "isCornerSW is: " << isCornerSW << endl;
+		cout << "isCornerHW is: " << isCornerHW << endl;
+
+		if (isCornerSW != isCornerHW)
+		{
+			err_cnt++;
+		}
 
  		if(err_cnt == 0)
 		{
 			cout << "Test " << k << " passed." << endl;
 		}
+ 		else
+ 		{
+			cout << "Test " << k << " failed!!!" << endl;
+ 		}
 		total_err_cnt += err_cnt;
 		cout << endl;
 	}
+
+//	/******************* Test rwSAE module from random value**************************/
+//	srand((unsigned)time(NULL));
+//	int16_t eventCnt = 500;
+//	ap_uint<TS_TYPE_BIT_WIDTH> outputDataSW[OUTER_SIZE], outputDataHW[OUTER_SIZE];
+//	ap_uint<5> sizeSW, sizeHW;
+//
+//	uint32_t x, y;
+//	uint32_t ts[eventCnt];
+//
+//	for(int k = 0; k < TEST_TIMES; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+// 		for (int i = 0; i < eventCnt; i++)
+//		{
+// 			ts[i]  = rand();
+//		}
+// 	    sort(ts, ts+eventCnt);
+//
+//// 	    cout << "\nArray after sorting using "
+//// 	         "default sort is : \n";
+//// 	    for (int i = 0; i < eventCnt; ++i)
+//// 	        cout << ts[i] << " ";
+//
+// 		for (int i = 0; i < eventCnt; i++)
+//		{
+//			x = rand()%50 + 20;
+//			y = rand()%50 + 20;
+////			idx = rand()%3;
+//	//		x = 255;
+//	//		y = 240;
+////			cout << "x : " << x << endl;
+////			cout << "y : " << y << endl;
+////			cout << "idx : " << idx << endl;
+//
+////			data[i] = (uint64_t)(x << 17) + (uint64_t)(y << 2) + (1 << 1);
+////			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
+//	 		rwSAESW(x, y, ts[i], 1, outputDataSW, &sizeSW);
+//	 		testRwSAEHW(x, y, ts[i], 1, outputDataHW, &sizeHW);
+//
+//	 		for (int  j = 0; j < OUTER_SIZE; j++)
+//	 		{
+//	 			if (outputDataSW[j] != outputDataHW[j])
+//	 			{
+// 	 				err_cnt++;
+//	 			}
+//	 		}
+//		}
+//
+//
+// 		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
 	/******************* Test SortedIdxData module from random value**************************/
 //	ap_uint<TS_TYPE_BIT_WIDTH> input[OUTER_SIZE];
