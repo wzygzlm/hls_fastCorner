@@ -272,25 +272,25 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 		ap_uint<1> cond[4][6 + NPC - 1];
 		for (uint8_t m = 0; m < 3 + NPC - 1; m++)
 		{
-			cond[0][m] = (idxData[i + m] >= INNER_SIZE - 3);
+			cond[0][m] = (idxData[(i + m)%16] >= INNER_SIZE - 3);
 		}
 
 		ap_uint<1> cond2[4 + NPC - 1];
 		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
 		{
-			cond[1][m] = (idxData[i + m] >= INNER_SIZE - 4);
+			cond[1][m] = (idxData[(i + m)%16] >= INNER_SIZE - 4);
 		}
 
 		ap_uint<1> cond3[5 + NPC - 1];
 		for (uint8_t m = 0; m < 5 + NPC - 1; m++)
 		{
-			cond[2][m] = (idxData[i + m] >= INNER_SIZE - 5);
+			cond[2][m] = (idxData[(i + m)%16] >= INNER_SIZE - 5);
 		}
 
 		ap_uint<1> cond4[6 + NPC - 1];
 		for (uint8_t m = 0; m < 6 + NPC - 1; m++)
 		{
-			cond[3][m] = (idxData[i + m] >= INNER_SIZE - 6);
+			cond[3][m] = (idxData[(i + m)%16] >= INNER_SIZE - 6);
 		}
 
 		ap_uint<1> tempCond[4][NPC];
@@ -306,12 +306,12 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 				}
 				isCornerTemp |= tempCond[n][k];
 
-				if (isCornerTemp == 1)
-				{
-					*isCorner = isCornerTemp ;
-					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
-					return;
-				}
+//				if (isCornerTemp == 1)
+//				{
+//					*isCorner = isCornerTemp ;
+//					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
+//					return;
+//				}
 			}
 		}
 		*isCorner = isCornerTemp ;

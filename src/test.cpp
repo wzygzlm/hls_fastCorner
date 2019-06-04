@@ -164,12 +164,12 @@ void sortArr(uint32_t arr[], int n, uint8_t outputIdx[])
 void testConvertandSortedIdxSW(uint32_t rawData[OUTER_SIZE], uint8_t size, uint8_t outputIdxData[OUTER_SIZE])
 {
 	assert(size <= OUTER_SIZE);
-	cout << "Raw Data is: " << endl;
+	cout << "Raw Data is: " << hex << endl;
 	for (int i = 0; i < size; i++)
 	{
 		cout << rawData[i] << "\t";
 	}
-	cout << endl;
+	cout << dec << endl;
 
 	sortArr(rawData, size, outputIdxData);
 
@@ -219,6 +219,7 @@ int main ()
 	int retval=0;
 	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
 //	srand((unsigned)time(NULL));
+	testTimes = 500;
 
     // The raw data for SW and HW are exactly the same, except the data type.
 	uint32_t testRawDataSW[OUTER_SIZE];
@@ -230,7 +231,7 @@ int main ()
 
 	uint8_t size = INNER_SIZE;
 
-	for(int k = 0; k < TEST_TIMES; k++)
+	for(int k = 0; k < testTimes; k++)
 	{
 		cout << "Test " << k << ":" << endl;
 
@@ -241,6 +242,15 @@ int main ()
  			testRawDataSW[i]  = rand();
  			testRawDataHW[i] = testRawDataSW[i];
 		}
+
+ 		// The following pattern is only used to test the boundary behavior.
+ 		// On normal test condition, uncomment them.
+// 		testRawDataSW[0] = 100000;
+// 		testRawDataSW[15] = 100000;
+// 		testRawDataSW[14] = 100000;
+// 		testRawDataHW[0] = 100000;
+// 		testRawDataHW[15] = 100000;
+// 		testRawDataHW[14] = 100000;
 
  		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
  		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
