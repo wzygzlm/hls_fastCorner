@@ -1,5 +1,4 @@
 #include "fastCorner.h"
-#include <iostream>
 #include <stdlib.h>
 #include <cmath>
 #include <fstream>
@@ -217,17 +216,73 @@ int main ()
 
     int total_err_cnt = 0;
 	int retval=0;
-	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
+//	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
+////	srand((unsigned)time(NULL));
+//	testTimes = 200;
+//
+//    // The raw data for SW and HW are exactly the same, except the data type.
+//	uint32_t testRawDataSW[OUTER_SIZE];
+//	ap_uint<32> testRawDataHW[OUTER_SIZE];
+////	uint8_t outputIdxSW[OUTER_SIZE];
+////	ap_uint<5> outputIdxHW[OUTER_SIZE];
+//
+//	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
+//
+//	uint8_t size = INNER_SIZE;
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+// 		for (int i = 0; i < size; i++)
+//		{
+// 			testRawDataSW[i]  = rand();
+// 			testRawDataHW[i] = testRawDataSW[i];
+//		}
+//
+// 		// The following pattern is only used to test the boundary behavior.
+// 		// On normal test condition, uncomment them.
+//// 		testRawDataSW[0] = 100000;
+//// 		testRawDataSW[15] = 100000;
+//// 		testRawDataSW[14] = 100000;
+//// 		testRawDataHW[0] = 100000;
+//// 		testRawDataHW[15] = 100000;
+//// 		testRawDataHW[14] = 100000;
+//
+// 		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
+// 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
+//
+//		cout << "isCornerSW is: " << isCornerSW << endl;
+//		cout << "isCornerHW is: " << isCornerHW << endl;
+//
+//		if (isCornerSW != isCornerHW)
+//		{
+//			err_cnt++;
+//		}
+//
+// 		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+// 		else
+// 		{
+//			cout << "Test " << k << " failed!!!" << endl;
+// 		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
+
+	/******************* Test testFromTsDataToIdxData module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 200;
+	testTimes = 1000;
 
     // The raw data for SW and HW are exactly the same, except the data type.
 	uint32_t testRawDataSW[OUTER_SIZE];
 	ap_uint<32> testRawDataHW[OUTER_SIZE];
-//	uint8_t outputIdxSW[OUTER_SIZE];
-//	ap_uint<5> outputIdxHW[OUTER_SIZE];
-
-	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
+	uint8_t outputIdxSW[OUTER_SIZE];
+	ap_uint<5> outputIdxHW[OUTER_SIZE];
 
 	uint8_t size = INNER_SIZE;
 
@@ -240,27 +295,36 @@ int main ()
  		for (int i = 0; i < size; i++)
 		{
  			testRawDataSW[i]  = rand();
+
+		}
+ 		for (int i = 0; i < size; i++)
+		{
+	        for(int j = i + 1; j < size; j++)
+	        if(testRawDataSW[i] == testRawDataSW[j])  // If the same, generate again.
+	        	testRawDataSW[j]  = rand();
+
  			testRawDataHW[i] = testRawDataSW[i];
 		}
 
- 		// The following pattern is only used to test the boundary behavior.
- 		// On normal test condition, uncomment them.
-// 		testRawDataSW[0] = 100000;
-// 		testRawDataSW[15] = 100000;
-// 		testRawDataSW[14] = 100000;
-// 		testRawDataHW[0] = 100000;
-// 		testRawDataHW[15] = 100000;
-// 		testRawDataHW[14] = 100000;
+ 		testConvertandSortedIdxSW(testRawDataSW, size, outputIdxSW);
+ 		testFromTsDataToIdxDataHW(testRawDataHW, size, outputIdxHW);
 
- 		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
- 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
-
-		cout << "isCornerSW is: " << isCornerSW << endl;
-		cout << "isCornerHW is: " << isCornerHW << endl;
-
-		if (isCornerSW != isCornerHW)
+		for (int  j = 0; j < size; j++)
 		{
-			err_cnt++;
+			if (size == INNER_SIZE)
+			{
+				if (outputIdxSW[j] + (OUTER_SIZE - INNER_SIZE) != outputIdxHW[j])
+				{
+					err_cnt++;
+				}
+			}
+			else
+			{
+				if (outputIdxSW[j] != outputIdxHW[j])
+				{
+					err_cnt++;
+				}
+			}
 		}
 
  		if(err_cnt == 0)

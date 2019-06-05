@@ -1043,6 +1043,25 @@ void testRwSAEHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  
     rwSAE<2>(x, y, ts, stage, outputData, size);
 }
 
+void testFromTsDataToIdxDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> idxData[OUTER_SIZE])
+{
+#pragma HLS DATAFLOW
+    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=5 dim=0
+
+    convertInterface<4>(inputRawData, INNER_SIZE, inStream);
+    // The NPC value of sortedIdxStream should be equal to the value of idxData factor.
+	sortedIdxStream<5>(inStream, INNER_SIZE, idxData);
+//	std::cout << "Idx Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)idxData[i]<< "\t";
+//	}
+//	std::cout << std::endl;
+}
 
 void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
 {
