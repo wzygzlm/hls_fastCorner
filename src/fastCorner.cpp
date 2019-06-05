@@ -87,11 +87,11 @@ void idxSorted(ap_uint<TS_TYPE_BIT_WIDTH> oriData, ap_uint<TS_TYPE_BIT_WIDTH> ts
 	{
 		ap_uint<1> cond1 = (tsData[i] < oriData);  // Notice the difference between < and <= here.
 		temp += cond1;
-		if (size == INNER_SIZE && i == INNER_SIZE - 1)
-		{
-			*newIdx = temp;
-			return;
-		}
+//		if (size == INNER_SIZE && i == INNER_SIZE - 1)
+//		{
+//			*newIdx = temp;
+//			return;
+//		}
 	}
 	*newIdx = temp;
 }
@@ -169,6 +169,7 @@ void sortedIdxData(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> siz
 template<int NPC>
 void sortedIdxStream(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsStream, ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
+assert(size <= OUTER_SIZE);
 #pragma HLS INLINE off
 	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData = tsStream.read();
 	ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE];
@@ -191,7 +192,7 @@ void sortedIdxStream(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsS
 
 	for(uint8_t i = 0; i < size; i = i + NPC)
 	{
-#pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
+// #pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
 #pragma HLS PIPELINE rewind
 		for(uint8_t j = 0; j < NPC; j++)
 		{
@@ -258,7 +259,7 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 	 * 						      3. decrease M to make II = 1 under NPC = 4 and NPC = 2 to check the resource usage reducing.
 	 * */
 #pragma HLS INLINE off
-#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=2 dim=0
+#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
 	ap_uint<1> isCornerTemp = 0;
 	if (size == 0)
 	{
@@ -272,25 +273,31 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 		ap_uint<1> cond[4][6 + NPC - 1];
 		for (uint8_t m = 0; m < 3 + NPC - 1; m++)
 		{
-			cond[0][m] = (idxData[(i + m)%16] >= INNER_SIZE - 3);
+			// The condition should be the idxData > (INNER_SIZE -3).
+			// However, in order to make the idxSorted could be shared by inner circle and outer circle together.
+			// We use a method that compare "size" values to all the input data which has OUTER_SIZE values in total.
+			// On the other hand, if the valid input data number is less than OUTER_SIZE, the other input data will be filled with 0.
+			// Thus, all the idxData for inner circle value will be added 4 (OUTER_SIZE - INNER_SIZE = 20 - 16 =4)
+			// When we check the innner idx data, we need to remove it.
+			cond[0][m] = (idxData[(i + m)%16] >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
 		}
 
 		ap_uint<1> cond2[4 + NPC - 1];
 		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
 		{
-			cond[1][m] = (idxData[(i + m)%16] >= INNER_SIZE - 4);
+			cond[1][m] = (idxData[(i + m)%16] >= INNER_SIZE - 4 + OUTER_SIZE - INNER_SIZE);
 		}
 
 		ap_uint<1> cond3[5 + NPC - 1];
 		for (uint8_t m = 0; m < 5 + NPC - 1; m++)
 		{
-			cond[2][m] = (idxData[(i + m)%16] >= INNER_SIZE - 5);
+			cond[2][m] = (idxData[(i + m)%16] >= INNER_SIZE - 5 + OUTER_SIZE - INNER_SIZE);
 		}
 
 		ap_uint<1> cond4[6 + NPC - 1];
 		for (uint8_t m = 0; m < 6 + NPC - 1; m++)
 		{
-			cond[3][m] = (idxData[(i + m)%16] >= INNER_SIZE - 6);
+			cond[3][m] = (idxData[(i + m)%16] >= INNER_SIZE - 6 + OUTER_SIZE - INNER_SIZE);
 		}
 
 		ap_uint<1> tempCond[4][NPC];
@@ -1046,17 +1053,17 @@ void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OU
 #pragma HLS RESOURCE variable=inStream core=FIFO_SRL
     ap_uint<5> idxData[OUTER_SIZE];
 
-    convertInterface<4>(inputRawData, size, inStream);
-	sortedIdxStream<2>(inStream, size, idxData);
+    convertInterface<4>(inputRawData, INNER_SIZE, inStream);
+	sortedIdxStream<5>(inStream, INNER_SIZE, idxData);
 
-	std::cout << "Idx Data HW is: " << std::endl;
-	for (int i = 0; i < size; i++)
-	{
-		std::cout << (int)idxData[i]<< "\t";
-	}
-	std::cout << std::endl;
+//	std::cout << "Idx Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)idxData[i]<< "\t";
+//	}
+//	std::cout << std::endl;
 
-	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkInnerIdx<5>(idxData, INNER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
