@@ -9,6 +9,7 @@ using namespace std;
 #include "ap_fixed.h"
 #include "time.h"
 //#include "insertion_cell_sort.h"
+#include <bitset>
 
 const static int DEBUG=1;
 const static int MAX_NUMBER=1000;
@@ -180,6 +181,27 @@ void testConvertandSortedIdxSW(uint32_t rawData[OUTER_SIZE], uint8_t size, uint8
 	cout << endl;
 }
 
+void testConvertandSortedInnerIdxSW(uint32_t rawData[OUTER_SIZE], ap_uint<4> condIdxData[INNER_SIZE])
+{
+	uint8_t outputIdxData[OUTER_SIZE];
+	testConvertandSortedIdxSW(rawData, INNER_SIZE, outputIdxData);
+
+	for (int i = 0; i < INNER_SIZE; i++)
+	{
+		for (int streak_size = 3; streak_size<=6; streak_size++)
+		{
+			condIdxData[i][streak_size - 3] =  (outputIdxData[i] >= (INNER_SIZE - streak_size));
+		}
+	}
+
+	cout << "Idx Bool Data SW is: " << endl;
+	for (int i = 0; i < INNER_SIZE; i++)
+	{
+		cout << bitset<4>(condIdxData[i].to_int()) << "\t";
+	}
+	cout << dec << endl;
+}
+
 void testFromTsDataCheckInnerCornerSW(uint32_t rawData[OUTER_SIZE], uint8_t size, ap_uint<1> *isCorner)
 {
 	uint8_t idxData[INNER_SIZE];
@@ -274,15 +296,15 @@ int main ()
 //		cout << endl;
 //	}
 
-	/******************* Test testFromTsDataToIdxData module from random value**************************/
+	/******************* Test testConvertandSortedInnerIdxSW module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 1000;
+	testTimes = 100;
 
-    // The raw data for SW and HW are exactly the same, except the data type.
+	// The raw data for SW and HW are exactly the same, except the data type.
 	uint32_t testRawDataSW[OUTER_SIZE];
 	ap_uint<32> testRawDataHW[OUTER_SIZE];
-	uint8_t outputIdxSW[OUTER_SIZE];
-	ap_uint<5> outputIdxHW[OUTER_SIZE];
+	ap_uint<4> outputIdxBoolSW[INNER_SIZE];
+	ap_uint<1> outputIdxBoolHW[INNER_SIZE][4];
 
 	uint8_t size = INNER_SIZE;
 
@@ -292,52 +314,110 @@ int main ()
 
 		int err_cnt = 0;
 
- 		for (int i = 0; i < size; i++)
+		for (int i = 0; i < size; i++)
 		{
- 			testRawDataSW[i]  = rand();
+			testRawDataSW[i]  = rand();
 
 		}
- 		for (int i = 0; i < size; i++)
+		for (int i = 0; i < size; i++)
 		{
-	        for(int j = i + 1; j < size; j++)
-	        if(testRawDataSW[i] == testRawDataSW[j])  // If the same, generate again.
-	        	testRawDataSW[j]  = rand();
+			for(int j = i + 1; j < size; j++)
+			if(testRawDataSW[i] == testRawDataSW[j])  // If the same, generate again.
+				testRawDataSW[j]  = rand();
 
- 			testRawDataHW[i] = testRawDataSW[i];
+			testRawDataHW[i] = testRawDataSW[i];
 		}
 
- 		testConvertandSortedIdxSW(testRawDataSW, size, outputIdxSW);
- 		testFromTsDataToIdxDataHW(testRawDataHW, size, outputIdxHW);
+		testConvertandSortedInnerIdxSW(testRawDataSW, outputIdxBoolSW);
+		testFromTsDataToIdxInnerBoolDataHW(testRawDataHW, size, outputIdxBoolHW);
 
-		for (int  j = 0; j < size; j++)
+		for (int  j = 0; j < INNER_SIZE; j++)
 		{
-			if (size == INNER_SIZE)
+			for (int i = 0; i < 4; i++ )
 			{
-				if (outputIdxSW[j] + (OUTER_SIZE - INNER_SIZE) != outputIdxHW[j])
-				{
-					err_cnt++;
-				}
-			}
-			else
-			{
-				if (outputIdxSW[j] != outputIdxHW[j])
+				if (outputIdxBoolSW[j][i] != outputIdxBoolHW[j][i])
 				{
 					err_cnt++;
 				}
 			}
 		}
 
- 		if(err_cnt == 0)
+		if(err_cnt == 0)
 		{
 			cout << "Test " << k << " passed." << endl;
 		}
- 		else
- 		{
+		else
+		{
 			cout << "Test " << k << " failed!!!" << endl;
- 		}
+		}
 		total_err_cnt += err_cnt;
 		cout << endl;
 	}
+
+//	/******************* Test testFromTsDataToIdxData module from random value**************************/
+////	srand((unsigned)time(NULL));
+//	testTimes = 1000;
+//
+//    // The raw data for SW and HW are exactly the same, except the data type.
+//	uint32_t testRawDataSW[OUTER_SIZE];
+//	ap_uint<32> testRawDataHW[OUTER_SIZE];
+//	uint8_t outputIdxSW[OUTER_SIZE];
+//	ap_uint<5> outputIdxHW[OUTER_SIZE];
+//
+//	uint8_t size = INNER_SIZE;
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+// 		for (int i = 0; i < size; i++)
+//		{
+// 			testRawDataSW[i]  = rand();
+//
+//		}
+// 		for (int i = 0; i < size; i++)
+//		{
+//	        for(int j = i + 1; j < size; j++)
+//	        if(testRawDataSW[i] == testRawDataSW[j])  // If the same, generate again.
+//	        	testRawDataSW[j]  = rand();
+//
+// 			testRawDataHW[i] = testRawDataSW[i];
+//		}
+//
+// 		testConvertandSortedIdxSW(testRawDataSW, size, outputIdxSW);
+// 		testFromTsDataToIdxDataHW(testRawDataHW, size, outputIdxHW);
+//
+//		for (int  j = 0; j < size; j++)
+//		{
+//			if (size == INNER_SIZE)
+//			{
+//				if (outputIdxSW[j] + (OUTER_SIZE - INNER_SIZE) != outputIdxHW[j])
+//				{
+//					err_cnt++;
+//				}
+//			}
+//			else
+//			{
+//				if (outputIdxSW[j] != outputIdxHW[j])
+//				{
+//					err_cnt++;
+//				}
+//			}
+//		}
+//
+// 		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+// 		else
+// 		{
+//			cout << "Test " << k << " failed!!!" << endl;
+// 		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
 //	/******************* Test rwSAE module from random value**************************/
 //	srand((unsigned)time(NULL));

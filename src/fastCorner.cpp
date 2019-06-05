@@ -203,6 +203,60 @@ assert(size <= OUTER_SIZE);
 	}
 }
 
+// Convert index data to the bool version data. It has two types, one for INNER circle and the other for OUTER circle.
+template<int NPC>
+void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<1> condFlg[INNER_SIZE][4])
+{
+#pragma HLS ARRAY_PARTITION variable=condFlg complete dim=0
+
+	for(uint8_t i = 0; i < INNER_SIZE; i = i + NPC)
+	{
+#pragma HLS PIPELINE
+		for(uint8_t j = 0; j < NPC; j++)
+		{
+			uint8_t tmpIndex = ap_uint<4>(i + j);     // INNER_SIZE is 16, so we need the least 4 bits.
+			ap_uint<5> tmpNewIdx = newIdx[tmpIndex];
+			// The condition should be the idxData > (INNER_SIZE -3).
+			// However, in order to make the idxSorted could be shared by inner circle and outer circle together.
+			// We use a method that compare "size" values to all the input data which has OUTER_SIZE values in total.
+			// On the other hand, if the valid input data number is less than OUTER_SIZE, the other input data will be filled with 0.
+			// Thus, all the idxData for inner circle value will be added 4 (OUTER_SIZE - INNER_SIZE = 20 - 16 =4)
+			// When we check the innner idx data, we need to remove it.
+			condFlg[tmpIndex][0] = (tmpNewIdx  >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
+			condFlg[tmpIndex][1] = (tmpNewIdx  >= INNER_SIZE - 4 + OUTER_SIZE - INNER_SIZE);
+			condFlg[tmpIndex][2] = (tmpNewIdx  >= INNER_SIZE - 5 + OUTER_SIZE - INNER_SIZE);
+			condFlg[tmpIndex][3] = (tmpNewIdx  >= INNER_SIZE - 6 + OUTER_SIZE - INNER_SIZE);
+		}
+	}
+}
+
+//void idxInnerBoolDataToCorner(ap_uint<4> condFlg[INNER_SIZE], ap_uint<1> *isCorner)
+//{
+//	ap_uint<1> isCornerTemp = 0;
+//
+//	for (uint8_t k = 0; k < NPC; k++)
+//	{
+//		for (uint8_t n = 0; n < 4; n++)
+//		{
+//			tempCond[n][k] = 1;
+//			for (uint8_t j = 0; j < 3 + n; j++)
+//			{
+//				tempCond[n][k] &= cond[n][j + k];
+//			}
+//			isCornerTemp |= tempCond[n][k];
+//
+////				if (isCornerTemp == 1)
+////				{
+////					*isCorner = isCornerTemp ;
+////					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
+////					return;
+////				}
+//		}
+//	}
+//
+//	*isCorner = isCornerTemp ;
+//}
+
 void testSortedIdxData(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsStream, ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
 #pragma HLS ARRAY_PARTITION variable=newIdx complete dim=0
@@ -1055,6 +1109,28 @@ void testFromTsDataToIdxDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZ
     convertInterface<4>(inputRawData, INNER_SIZE, inStream);
     // The NPC value of sortedIdxStream should be equal to the value of idxData factor.
 	sortedIdxStream<5>(inStream, INNER_SIZE, idxData);
+//	std::cout << "Idx Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)idxData[i]<< "\t";
+//	}
+//	std::cout << std::endl;
+}
+
+void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> idxBoolData[OUTER_SIZE][4])
+{
+#pragma HLS DATAFLOW
+    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+    ap_uint<5> idxData[OUTER_SIZE];
+#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=5 dim=0
+
+    convertInterface<4>(inputRawData, INNER_SIZE, inStream);
+    // The NPC value of sortedIdxStream should be equal to the value of idxData factor.
+	sortedIdxStream<5>(inStream, INNER_SIZE, idxData);
+	idxDataToIdxInnerBoolData<5>(idxData, idxBoolData);
 //	std::cout << "Idx Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
 //	{
