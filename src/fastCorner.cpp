@@ -436,6 +436,109 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 	}
 }
 
+
+template<int NPC>
+void checkInnerIdxV2(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
+{
+	/* This is a good example to show the LUTs as a function of the NPC
+	 * Decreasing factor doesn't mean decreasing the performance.
+	 * In this example, change the partition from factor to completely, the LUTs will increase a lot.
+	 * The start index is fixed (always the multiple of NPC), so the partition could increase a lot.
+	 * Another very interesting thing here is that: if NPC equals to 1, then i become arbitrary again
+	 * which is not in a fixed pattern. In this case, multiplxer will be generated again.
+	 *
+	 * It's also a good example to compare the parameter cyclic and block here.
+	 *
+	 * The final expression LUTs# is about:  (NPC+2)*icmp + (NPC*2)*and + (NPC+1)*or + 2*adder for only streak length=3.
+	 * If multiple streaks are used, the formulation should be derived again.
+	 *
+	 * The max number of data read from the memory M should be less than 2*factor.
+	 * At the same time, NPC should be >= factor. Otherwise select will be synthesed.
+	 *
+	 * For example, if we the max streak lenght is 6, then the max number of data read from the memory is M = 6 + NPC - 1 = NPC + 5
+	 * If we set NPC=2, then factor can only be 1 or 2. Say we choose factor = 2, then M = 7 > 2 * 2. So this is not a good combination.
+	 * Set NPC = 4 and factor = 4, M = 9 still bigger than 2 * factor = 8.
+	 * So we should use NPC = 5 and factor = 5. The factor should be divided by the size (if size = 20).
+	 *
+	 * TODO: compare these cases: 1. the loop_count is the multiple of NPC 2. the loop count is not the multiple of NPC
+	 * 						      3. decrease M to make II = 1 under NPC = 4 and NPC = 2 to check the resource usage reducing.
+	 * */
+#pragma HLS INLINE off
+#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
+	ap_uint<1> isCornerTemp = 0;
+//	if (size == 0)
+//	{
+//		*isCorner = isCornerTemp;
+//		return;
+//	}
+	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)
+	{
+#pragma HLS LOOP_TRIPCOUNT min=0 max=16/NPC
+#pragma HLS PIPELINE
+		InitRegion:
+		{
+//#pragma HLS LATENCY min=1
+			if (i * NPC >= size)
+			{
+				break;
+			}
+		}
+		ap_uint<1> cond[4][6 + NPC - 1];
+		for (uint8_t m = 0; m < 3 + NPC - 1; m++)
+		{
+			// The condition should be the idxData > (INNER_SIZE -3).
+			// However, in order to make the idxSorted could be shared by inner circle and outer circle together.
+			// We use a method that compare "size" values to all the input data which has OUTER_SIZE values in total.
+			// On the other hand, if the valid input data number is less than OUTER_SIZE, the other input data will be filled with 0.
+			// Thus, all the idxData for inner circle value will be added 4 (OUTER_SIZE - INNER_SIZE = 20 - 16 =4)
+			// When we check the innner idx data, we need to remove it.
+			cond[0][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
+		}
+
+		ap_uint<1> cond2[4 + NPC - 1];
+		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
+		{
+			cond[1][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 4 + OUTER_SIZE - INNER_SIZE);
+		}
+
+		ap_uint<1> cond3[5 + NPC - 1];
+		for (uint8_t m = 0; m < 5 + NPC - 1; m++)
+		{
+			cond[2][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 5 + OUTER_SIZE - INNER_SIZE);
+		}
+
+		ap_uint<1> cond4[6 + NPC - 1];
+		for (uint8_t m = 0; m < 6 + NPC - 1; m++)
+		{
+			cond[3][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 6 + OUTER_SIZE - INNER_SIZE);
+		}
+
+		ap_uint<1> tempCond[4][NPC];
+
+		for (uint8_t k = 0; k < NPC; k++)
+		{
+			for (uint8_t n = 0; n < 4; n++)
+			{
+				tempCond[n][k] = 1;
+				for (uint8_t j = 0; j < 3 + n; j++)
+				{
+					tempCond[n][k] &= cond[n][j + k];
+				}
+				isCornerTemp |= tempCond[n][k];
+
+//				if (isCornerTemp == 1)
+//				{
+//					*isCorner = isCornerTemp ;
+//					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
+//					return;
+//				}
+			}
+		}
+		*isCorner = isCornerTemp ;
+	}
+}
+
+
 template<int NPC>
 void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
 {
@@ -497,7 +600,8 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
 
 void testCheckInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
-	checkInnerIdx<5>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+//	checkInnerIdx<5>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkInnerIdxV2<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void testCheckOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
