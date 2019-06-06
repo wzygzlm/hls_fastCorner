@@ -54,10 +54,14 @@ void convertInterface(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> 
 
 	ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> tmpData = 0;
 
-	for(uint8_t i = 0; i < size; i = i + NPC)
+	for(uint8_t i = 0; i < OUTER_SIZE; i = i + NPC)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
 #pragma HLS PIPELINE rewind
+		if (i >= size)
+		{
+			break;
+		}
 		for(uint8_t j = 0; j < NPC; j++)
 		{
 			for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
@@ -192,8 +196,12 @@ assert(size <= OUTER_SIZE);
 
 	for(uint8_t i = 0; i < size; i = i + NPC)
 	{
-// #pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
+#pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
 #pragma HLS PIPELINE rewind
+		if (i >= size)
+		{
+			break;
+		}
 		for(uint8_t j = 0; j < NPC; j++)
 		{
 //			ap_uint<5> tmpIdx;
@@ -1129,9 +1137,9 @@ void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[
     ap_uint<5> idxData[OUTER_SIZE];
 //#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=5 dim=0
 
-    convertInterface<2>(inputRawData, INNER_SIZE, inStream);
+    convertInterface<2>(inputRawData, size, inStream);
     // The NPC value of sortedIdxStream should be equal to the value of idxData factor.
-	sortedIdxStream<2>(inStream, INNER_SIZE, idxData);
+	sortedIdxStream<2>(inStream, size, idxData);
 	idxDataToIdxInnerBoolData<4>(idxData, idxBoolData);
 //	std::cout << "Idx Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
