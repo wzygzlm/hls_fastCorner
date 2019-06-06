@@ -213,8 +213,9 @@ assert(size <= OUTER_SIZE);
 
 // Convert index data to the bool version data. It has two types, one for INNER circle and the other for OUTER circle.
 template<int NPC>
-void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<5> size, ap_uint<4> condFlg[INNER_SIZE])
+void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<5> size, ap_uint<4> condFlg[OUTER_SIZE])
 {
+assert(size<=OUTER_SIZE);
 #pragma HLS ARRAY_PARTITION variable=condFlg cyclic factor=NPC dim=0
 //#pragma HLS ARRAY_PARTITION variable=condFlg complete dim=0
 #pragma HLS ARRAY_PARTITION variable=newIdx cyclic factor=NPC/2 dim=0
@@ -1151,6 +1152,11 @@ void testSortHW(ap_uint<TS_TYPE_BIT_WIDTH> inputA[TEST_SORT_DATA_SIZE], ap_uint<
 void testRwSAEHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
 {
     rwSAE<2>(x, y, ts, stage, outputData, size);
+}
+
+void testIdxDataToIdxInnerBoolDataHW(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<5> size, ap_uint<4> condFlg[OUTER_SIZE])
+{
+	idxDataToIdxInnerBoolData<6>(newIdx, size, condFlg);
 }
 
 void testFromTsDataToIdxDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> idxData[OUTER_SIZE])

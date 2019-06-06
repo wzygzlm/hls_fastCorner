@@ -9,7 +9,7 @@
         <clock default="false" name="default" period="10"/>
     </clockList>
     <config>
-        <schedule model="testFromTsDataToInnerCornerHW"/>
+        <schedule model="testIdxDataToIdxInnerBoolDataHW"/>
     </config>
     <UIConfigurations>
         <UIAutosynConf hideTrivialOp="true" isBasedOnBoard="false" isSolutionDirty="false" isStopAskAgain="false" showDetailDesignViewer="false">

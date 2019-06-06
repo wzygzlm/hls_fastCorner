@@ -201,6 +201,32 @@ void testConvertandSortedInnerIdxSW(uint32_t rawData[OUTER_SIZE], ap_uint<4> con
 	cout << dec << endl;
 }
 
+void testIdxDataToIdxInnerBoolDataSW(int idxData[OUTER_SIZE], ap_uint<5> size, ap_uint<5> condFlg[OUTER_SIZE])
+{
+	if(size == INNER_SIZE || size == 18)
+	{
+		for(int i = 0; i < size; i++)
+		{
+			condFlg[i][0] = (idxData[i] >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
+			condFlg[i][1] = (idxData[i]  >= INNER_SIZE - 4 + OUTER_SIZE - INNER_SIZE);
+			condFlg[i][2] = (idxData[i]  >= INNER_SIZE - 5 + OUTER_SIZE - INNER_SIZE);
+			condFlg[i][3] = (idxData[i]  >= INNER_SIZE - 6 + OUTER_SIZE - INNER_SIZE);
+		}
+	}
+	else if(size == OUTER_SIZE)
+	{
+		for(int i = 0; i < size; i++)
+		{
+			condFlg[i][0] = (idxData[i] >= OUTER_SIZE - 4);
+			condFlg[i][1] = (idxData[i] >= OUTER_SIZE - 5);
+			condFlg[i][2] = (idxData[i] >= OUTER_SIZE - 6);
+			condFlg[i][3] = (idxData[i] >= OUTER_SIZE - 7);
+			condFlg[i][4] = (idxData[i] >= OUTER_SIZE - 8);
+		}
+	}
+
+}
+
 void testFromTsDataCheckInnerCornerSW(uint32_t rawData[OUTER_SIZE], uint8_t size, ap_uint<1> *isCorner)
 {
 	uint8_t idxData[INNER_SIZE];
@@ -237,64 +263,64 @@ int main ()
 
     int total_err_cnt = 0;
 	int retval=0;
-	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
-//	srand((unsigned)time(NULL));
-	testTimes = 1000;
-
-    // The raw data for SW and HW are exactly the same, except the data type.
-	uint32_t testRawDataSW[OUTER_SIZE];
-	ap_uint<32> testRawDataHW[OUTER_SIZE];
-//	uint8_t outputIdxSW[OUTER_SIZE];
-//	ap_uint<5> outputIdxHW[OUTER_SIZE];
-
-	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
-
-	uint8_t size = INNER_SIZE;
-
-	for(int k = 0; k < testTimes; k++)
-	{
-		cout << "Test " << k << ":" << endl;
-
-		int err_cnt = 0;
-
- 		for (int i = 0; i < size; i++)
-		{
- 			testRawDataSW[i]  = rand();
- 			testRawDataHW[i] = testRawDataSW[i];
-		}
-
- 		// The following pattern is only used to test the boundary behavior.
- 		// On normal test condition, uncomment them.
-// 		testRawDataSW[0] = 100000;
-// 		testRawDataSW[15] = 100000;
-// 		testRawDataSW[14] = 100000;
-// 		testRawDataHW[0] = 100000;
-// 		testRawDataHW[15] = 100000;
-// 		testRawDataHW[14] = 100000;
-
- 		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
- 		testFromTsDataToInnerCornerHW(testRawDataHW, size, &isCornerHW);
- 		// 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
-
-		cout << "isCornerSW is: " << isCornerSW << endl;
-		cout << "isCornerHW is: " << isCornerHW << endl;
-
-		if (isCornerSW != isCornerHW)
-		{
-			err_cnt++;
-		}
-
- 		if(err_cnt == 0)
-		{
-			cout << "Test " << k << " passed." << endl;
-		}
- 		else
- 		{
-			cout << "Test " << k << " failed!!!" << endl;
- 		}
-		total_err_cnt += err_cnt;
-		cout << endl;
-	}
+//	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
+////	srand((unsigned)time(NULL));
+//	testTimes = 1000;
+//
+//    // The raw data for SW and HW are exactly the same, except the data type.
+//	uint32_t testRawDataSW[OUTER_SIZE];
+//	ap_uint<32> testRawDataHW[OUTER_SIZE];
+////	uint8_t outputIdxSW[OUTER_SIZE];
+////	ap_uint<5> outputIdxHW[OUTER_SIZE];
+//
+//	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
+//
+//	uint8_t size = INNER_SIZE;
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+// 		for (int i = 0; i < size; i++)
+//		{
+// 			testRawDataSW[i]  = rand();
+// 			testRawDataHW[i] = testRawDataSW[i];
+//		}
+//
+// 		// The following pattern is only used to test the boundary behavior.
+// 		// On normal test condition, uncomment them.
+//// 		testRawDataSW[0] = 100000;
+//// 		testRawDataSW[15] = 100000;
+//// 		testRawDataSW[14] = 100000;
+//// 		testRawDataHW[0] = 100000;
+//// 		testRawDataHW[15] = 100000;
+//// 		testRawDataHW[14] = 100000;
+//
+// 		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
+// 		testFromTsDataToInnerCornerHW(testRawDataHW, size, &isCornerHW);
+// 		// 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
+//
+//		cout << "isCornerSW is: " << isCornerSW << endl;
+//		cout << "isCornerHW is: " << isCornerHW << endl;
+//
+//		if (isCornerSW != isCornerHW)
+//		{
+//			err_cnt++;
+//		}
+//
+// 		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+// 		else
+// 		{
+//			cout << "Test " << k << " failed!!!" << endl;
+// 		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
 //	/******************* Test testConvertandSortedInnerIdxSW module from random value**************************/
 ////	srand((unsigned)time(NULL));
@@ -418,6 +444,58 @@ int main ()
 //		total_err_cnt += err_cnt;
 //		cout << endl;
 //	}
+
+	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
+//	srand((unsigned)time(NULL));
+	testTimes = 1000;
+
+    // The raw data for SW and HW are exactly the same, except the data type.
+	int idxDataSW[OUTER_SIZE];
+	ap_uint<5> idxDataHW[OUTER_SIZE];
+	ap_uint<5> outputIdxBoolSW[OUTER_SIZE];
+	ap_uint<4> outputIdxBoolHW[OUTER_SIZE];
+
+	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
+
+	uint8_t size = 18;
+
+	for(int k = 0; k < testTimes; k++)
+	{
+		cout << "Test " << k << ":" << endl;
+
+		int err_cnt = 0;
+
+ 		for (int i = 0; i < size; i++)
+		{
+ 			idxDataSW[i]  = rand()%size;
+ 			idxDataHW[i] = idxDataSW[i];
+		}
+
+ 		testIdxDataToIdxInnerBoolDataSW(idxDataSW, size, outputIdxBoolSW);
+ 		testIdxDataToIdxInnerBoolDataHW(idxDataHW, size, outputIdxBoolHW);
+
+		for (int  j = 0; j < 18; j++)
+		{
+			for (int i = 0; i < 4; i++ )
+			{
+				if (outputIdxBoolSW[j][i] != outputIdxBoolHW[j][i])
+				{
+					err_cnt++;
+				}
+			}
+		}
+
+ 		if(err_cnt == 0)
+		{
+			cout << "Test " << k << " passed." << endl;
+		}
+ 		else
+ 		{
+			cout << "Test " << k << " failed!!!" << endl;
+ 		}
+		total_err_cnt += err_cnt;
+		cout << endl;
+	}
 
 //	/******************* Test rwSAE module from random value**************************/
 //	srand((unsigned)time(NULL));
