@@ -239,7 +239,7 @@ int main ()
 	int retval=0;
 	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 200;
+	testTimes = 1000;
 
     // The raw data for SW and HW are exactly the same, except the data type.
 	uint32_t testRawDataSW[OUTER_SIZE];
@@ -272,8 +272,9 @@ int main ()
 // 		testRawDataHW[15] = 100000;
 // 		testRawDataHW[14] = 100000;
 
- 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
  		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
+ 		testFromTsDataToInnerCornerHW(testRawDataHW, size, &isCornerHW);
+ 		// 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
 
 		cout << "isCornerSW is: " << isCornerSW << endl;
 		cout << "isCornerHW is: " << isCornerHW << endl;
@@ -303,7 +304,7 @@ int main ()
 //	uint32_t testRawDataSW[OUTER_SIZE];
 //	ap_uint<32> testRawDataHW[OUTER_SIZE];
 //	ap_uint<4> outputIdxBoolSW[INNER_SIZE];
-//	ap_uint<1> outputIdxBoolHW[INNER_SIZE][4];
+//	ap_uint<4> outputIdxBoolHW[INNER_SIZE];
 //
 //	uint8_t size = INNER_SIZE;
 //

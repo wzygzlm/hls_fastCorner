@@ -213,9 +213,10 @@ assert(size <= OUTER_SIZE);
 
 // Convert index data to the bool version data. It has two types, one for INNER circle and the other for OUTER circle.
 template<int NPC>
-void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<5> size, ap_uint<1> condFlg[INNER_SIZE][4])
+void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<5> size, ap_uint<4> condFlg[INNER_SIZE])
 {
-#pragma HLS ARRAY_PARTITION variable=condFlg complete dim=0
+#pragma HLS ARRAY_PARTITION variable=condFlg cyclic factor=NPC dim=0
+//#pragma HLS ARRAY_PARTITION variable=condFlg complete dim=0
 #pragma HLS ARRAY_PARTITION variable=newIdx cyclic factor=NPC/2 dim=0
 // #pragma HLS ARRAY_PARTITION variable=newIdx complete dim=0
 
@@ -234,24 +235,43 @@ void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<5> size, a
 		{
 			uint8_t tmpIndex = i * NPC + j;
 			ap_uint<5> tmpNewIdx = newIdx[tmpIndex];
+			ap_uint<4> tmpTmp;
 			// The condition should be the idxData > (INNER_SIZE -3).
 			// However, in order to make the idxSorted could be shared by inner circle and outer circle together.
 			// We use a method that compare "size" values to all the input data which has OUTER_SIZE values in total.
 			// On the other hand, if the valid input data number is less than OUTER_SIZE, the other input data will be filled with 0.
 			// Thus, all the idxData for inner circle value will be added 4 (OUTER_SIZE - INNER_SIZE = 20 - 16 =4)
 			// When we check the innner idx data, we need to remove it.
-			condFlg[tmpIndex][0] = (tmpNewIdx  >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
-			condFlg[tmpIndex][1] = (tmpNewIdx  >= INNER_SIZE - 4 + OUTER_SIZE - INNER_SIZE);
-			condFlg[tmpIndex][2] = (tmpNewIdx  >= INNER_SIZE - 5 + OUTER_SIZE - INNER_SIZE);
-			condFlg[tmpIndex][3] = (tmpNewIdx  >= INNER_SIZE - 6 + OUTER_SIZE - INNER_SIZE);
+			tmpTmp[0] = (tmpNewIdx  >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
+			tmpTmp[1] = (tmpNewIdx  >= INNER_SIZE - 4 + OUTER_SIZE - INNER_SIZE);
+			tmpTmp[2] = (tmpNewIdx  >= INNER_SIZE - 5 + OUTER_SIZE - INNER_SIZE);
+			tmpTmp[3] = (tmpNewIdx  >= INNER_SIZE - 6 + OUTER_SIZE - INNER_SIZE);
+			condFlg[tmpIndex] = tmpTmp;
 		}
 	}
 }
 
 template<int NPC>
-void idxInnerBoolDataToCorner(ap_uint<1> condFlg[INNER_SIZE][4], ap_uint<5> size, ap_uint<1> *isCorner)
+void idxInnerBoolDataToCorner(ap_uint<4> condFlg[INNER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
 {
+#pragma HLS ARRAY_PARTITION variable=condFlg cyclic factor=NPC dim=0
+
 	ap_uint<1> isCornerTemp = 0;
+	ap_uint<4> tempCond[NPC];
+#pragma HLS ARRAY_PARTITION variable=tempCond complete dim=0
+
+	ap_uint<4> cond[INNER_SIZE];
+#pragma HLS ARRAY_PARTITION variable=cond complete dim=0
+
+	for (uint8_t i = 0; i < INNER_SIZE; i = i + 2 * NPC)
+	{
+#pragma HLS PIPELINE
+		for (uint8_t k = 0; k < 2 * NPC; k++)
+		{
+			cond[i + k] = condFlg[i + k];
+		}
+	}
+
 	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)
 	{
 #pragma HLS PIPELINE
@@ -263,16 +283,20 @@ void idxInnerBoolDataToCorner(ap_uint<1> condFlg[INNER_SIZE][4], ap_uint<5> size
 				break;
 			}
 		}
-		ap_uint<1> tempCond[NPC][4];
 
 		for (uint8_t k = 0; k < NPC; k++)
 		{
+			tempCond[k] = ap_uint<4>(15);
 			for (uint8_t n = 0; n < 4; n++)
 			{
-				tempCond[k][n] = 1;
 				for (uint8_t j = 0; j < 3 + n; j++)
 				{
-					tempCond[k][4] &= condFlg[i * NPC + j + k][n];
+					ap_uint<5> tmpIdx = i * NPC + j + k;
+					if (tmpIdx >= INNER_SIZE) tmpIdx = tmpIdx - INNER_SIZE;
+
+					ap_uint<1> tmpTmp = tempCond[k][n];
+					tmpTmp = tmpTmp & cond[tmpIdx][n];
+					tempCond[k][n] = tmpTmp;
 				}
 				isCornerTemp |= tempCond[k][n];
 			}
@@ -344,7 +368,7 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 //		*isCorner = isCornerTemp;
 //		return;
 //	}
-	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)
+	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)   // This multipler fomr is easier to understand but consume more resources.
 	{
 #pragma HLS LOOP_TRIPCOUNT min=0 max=16/NPC
 #pragma HLS PIPELINE
@@ -1149,7 +1173,7 @@ void testFromTsDataToIdxDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZ
 //	std::cout << std::endl;
 }
 
-void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> idxBoolData[INNER_SIZE][4])
+void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<4> idxBoolData[INNER_SIZE])
 {
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
@@ -1177,6 +1201,41 @@ void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[
 //	}
 //	std::cout << std::dec << std::endl;
 }
+
+void testFromTsDataToInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
+{
+#pragma HLS DATAFLOW
+    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+    ap_uint<5> idxData[OUTER_SIZE];
+    ap_uint<4> idxBoolData[INNER_SIZE];
+#pragma HLS RESOURCE variable=idxBoolData core=RAM_2P_LUTRAM
+
+    convertInterface<2>(inputRawData, size, inStream);
+    // The NPC value of sortedIdxStream should be equal to the value of idxData factor.
+	sortedIdxStream<2>(inStream, size, idxData);
+	idxDataToIdxInnerBoolData<4>(idxData, size, idxBoolData);
+
+//	std::cout << "Idx Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)idxData[i]<< "\t";
+//	}
+//	std::cout << std::endl;
+//
+//	std::cout << "Idx Bool Data HW is: " << std::endl;
+//	for (int i = 0; i < INNER_SIZE; i++)
+//	{
+//		std::cout << idxBoolData[i][3] << idxBoolData[i][2] << idxBoolData[i][1] << idxBoolData[i][0] << "\t";
+//	}
+//	std::cout << std::dec << std::endl;
+
+	idxInnerBoolDataToCorner<4>(idxBoolData, size, isCorner);
+
+}
+
 
 void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
 {
