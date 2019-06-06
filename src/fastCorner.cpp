@@ -194,18 +194,18 @@ assert(size <= OUTER_SIZE);
 		}
 	}
 
-	for(uint8_t i = 0; i < size; i = i + NPC)
+	for(uint8_t i = 0; i < OUTER_SIZE/NPC; i = i + 1)
 	{
-#pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
-#pragma HLS PIPELINE rewind
-		if (i >= size)
+// #pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
+#pragma HLS PIPELINE
+		if (i * NPC >= size)
 		{
 			break;
 		}
 		for(uint8_t j = 0; j < NPC; j++)
 		{
 //			ap_uint<5> tmpIdx;
-			idxSorted(inData[i + j], inData, size, &newIdx[i + j]);
+			idxSorted(inData[i * NPC + j], inData, size, &newIdx[i * NPC + j]);
 //			newIdx[i + 0] = tmpIdx;
 		}
 	}
@@ -221,7 +221,7 @@ void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<1> condFlg
 
 	for(uint8_t i = 0; i < INNER_SIZE/NPC; i = i + 1)
 	{
-#pragma HLS PIPELINE
+#pragma HLS PIPELINE rewind
 		for(uint8_t j = 0; j < NPC; j++)
 		{
 			uint8_t tmpIndex = i * NPC + j;
@@ -239,6 +239,7 @@ void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<1> condFlg
 		}
 	}
 }
+
 
 //void idxInnerBoolDataToCorner(ap_uint<4> condFlg[INNER_SIZE], ap_uint<1> *isCorner)
 //{
