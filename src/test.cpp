@@ -9,7 +9,6 @@ using namespace std;
 #include "ap_fixed.h"
 #include "time.h"
 //#include "insertion_cell_sort.h"
-#include <bitset>
 
 const static int DEBUG=1;
 const static int MAX_NUMBER=1000;
@@ -197,7 +196,7 @@ void testConvertandSortedInnerIdxSW(uint32_t rawData[OUTER_SIZE], ap_uint<4> con
 	cout << "Idx Bool Data SW is: " << endl;
 	for (int i = 0; i < INNER_SIZE; i++)
 	{
-		cout << bitset<4>(condIdxData[i].to_int()) << "\t";
+		cout << condIdxData[i][3] << condIdxData[i][2] << condIdxData[i][1] << condIdxData[i][0] << "\t";
 	}
 	cout << dec << endl;
 }
@@ -298,7 +297,7 @@ int main ()
 
 	/******************* Test testConvertandSortedInnerIdxSW module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 100;
+	testTimes = 1000;
 
 	// The raw data for SW and HW are exactly the same, except the data type.
 	uint32_t testRawDataSW[OUTER_SIZE];
@@ -328,8 +327,8 @@ int main ()
 			testRawDataHW[i] = testRawDataSW[i];
 		}
 
-		testConvertandSortedInnerIdxSW(testRawDataSW, outputIdxBoolSW);
 		testFromTsDataToIdxInnerBoolDataHW(testRawDataHW, size, outputIdxBoolHW);
+		testConvertandSortedInnerIdxSW(testRawDataSW, outputIdxBoolSW);
 
 		for (int  j = 0; j < INNER_SIZE; j++)
 		{

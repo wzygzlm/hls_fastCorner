@@ -208,13 +208,15 @@ template<int NPC>
 void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<1> condFlg[INNER_SIZE][4])
 {
 #pragma HLS ARRAY_PARTITION variable=condFlg complete dim=0
+#pragma HLS ARRAY_PARTITION variable=newIdx cyclic factor=NPC/2 dim=0
+// #pragma HLS ARRAY_PARTITION variable=newIdx complete dim=0
 
-	for(uint8_t i = 0; i < INNER_SIZE; i = i + NPC)
+	for(uint8_t i = 0; i < INNER_SIZE/NPC; i = i + 1)
 	{
 #pragma HLS PIPELINE
 		for(uint8_t j = 0; j < NPC; j++)
 		{
-			uint8_t tmpIndex = ap_uint<4>(i + j);     // INNER_SIZE is 16, so we need the least 4 bits.
+			uint8_t tmpIndex = i * NPC + j;
 			ap_uint<5> tmpNewIdx = newIdx[tmpIndex];
 			// The condition should be the idxData > (INNER_SIZE -3).
 			// However, in order to make the idxSorted could be shared by inner circle and outer circle together.
@@ -1117,7 +1119,7 @@ void testFromTsDataToIdxDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZ
 //	std::cout << std::endl;
 }
 
-void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> idxBoolData[OUTER_SIZE][4])
+void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> idxBoolData[INNER_SIZE][4])
 {
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
@@ -1125,18 +1127,25 @@ void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[
 #pragma HLS STREAM variable=inStream depth=2 dim=1
 #pragma HLS RESOURCE variable=inStream core=FIFO_SRL
     ap_uint<5> idxData[OUTER_SIZE];
-#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=5 dim=0
+//#pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=5 dim=0
 
-    convertInterface<4>(inputRawData, INNER_SIZE, inStream);
+    convertInterface<2>(inputRawData, INNER_SIZE, inStream);
     // The NPC value of sortedIdxStream should be equal to the value of idxData factor.
-	sortedIdxStream<5>(inStream, INNER_SIZE, idxData);
-	idxDataToIdxInnerBoolData<5>(idxData, idxBoolData);
+	sortedIdxStream<2>(inStream, INNER_SIZE, idxData);
+	idxDataToIdxInnerBoolData<4>(idxData, idxBoolData);
 //	std::cout << "Idx Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
 //	{
 //		std::cout << (int)idxData[i]<< "\t";
 //	}
 //	std::cout << std::endl;
+//
+//	std::cout << "Idx Bool Data HW is: " << std::endl;
+//	for (int i = 0; i < INNER_SIZE; i++)
+//	{
+//		std::cout << idxBoolData[i][3] << idxBoolData[i][2] << idxBoolData[i][1] << idxBoolData[i][0] << "\t";
+//	}
+//	std::cout << std::dec << std::endl;
 }
 
 void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)

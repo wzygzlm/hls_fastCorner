@@ -6,7 +6,6 @@
 #include "hls_stream.h"
 #include "ap_axi_sdata.h"
 
-
 #define DVS_WIDTH  240
 // Change these two together
 #define RESHAPE_FACTOR 16
