@@ -1,4 +1,4 @@
-<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="testFromTsDataToIdxInnerBoolDataHW">
+<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="testFromTsDataCheckInnerCornerHW">
     <includePaths/>
     <libraryPaths/>
     <Simulation>

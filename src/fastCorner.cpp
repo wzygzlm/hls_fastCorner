@@ -213,15 +213,23 @@ assert(size <= OUTER_SIZE);
 
 // Convert index data to the bool version data. It has two types, one for INNER circle and the other for OUTER circle.
 template<int NPC>
-void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<1> condFlg[INNER_SIZE][4])
+void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<5> size, ap_uint<1> condFlg[INNER_SIZE][4])
 {
 #pragma HLS ARRAY_PARTITION variable=condFlg complete dim=0
 #pragma HLS ARRAY_PARTITION variable=newIdx cyclic factor=NPC/2 dim=0
 // #pragma HLS ARRAY_PARTITION variable=newIdx complete dim=0
 
-	for(uint8_t i = 0; i < INNER_SIZE/NPC; i = i + 1)
+	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)
 	{
-#pragma HLS PIPELINE rewind
+#pragma HLS PIPELINE
+		InitRegion:
+		{
+//#pragma HLS LATENCY min=1
+			if (i * NPC >= size)
+			{
+				break;
+			}
+		}
 		for(uint8_t j = 0; j < NPC; j++)
 		{
 			uint8_t tmpIndex = i * NPC + j;
@@ -240,33 +248,38 @@ void idxDataToIdxInnerBoolData(ap_uint<5> newIdx[OUTER_SIZE], ap_uint<1> condFlg
 	}
 }
 
+template<int NPC>
+void idxInnerBoolDataToCorner(ap_uint<1> condFlg[INNER_SIZE][4], ap_uint<5> size, ap_uint<1> *isCorner)
+{
+	ap_uint<1> isCornerTemp = 0;
+	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)
+	{
+#pragma HLS PIPELINE
+		InitRegion:
+		{
+//#pragma HLS LATENCY min=1
+			if (i * NPC >= size)
+			{
+				break;
+			}
+		}
+		ap_uint<1> tempCond[NPC][4];
 
-//void idxInnerBoolDataToCorner(ap_uint<4> condFlg[INNER_SIZE], ap_uint<1> *isCorner)
-//{
-//	ap_uint<1> isCornerTemp = 0;
-//
-//	for (uint8_t k = 0; k < NPC; k++)
-//	{
-//		for (uint8_t n = 0; n < 4; n++)
-//		{
-//			tempCond[n][k] = 1;
-//			for (uint8_t j = 0; j < 3 + n; j++)
-//			{
-//				tempCond[n][k] &= cond[n][j + k];
-//			}
-//			isCornerTemp |= tempCond[n][k];
-//
-////				if (isCornerTemp == 1)
-////				{
-////					*isCorner = isCornerTemp ;
-////					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
-////					return;
-////				}
-//		}
-//	}
-//
-//	*isCorner = isCornerTemp ;
-//}
+		for (uint8_t k = 0; k < NPC; k++)
+		{
+			for (uint8_t n = 0; n < 4; n++)
+			{
+				tempCond[k][n] = 1;
+				for (uint8_t j = 0; j < 3 + n; j++)
+				{
+					tempCond[k][4] &= condFlg[i * NPC + j + k][n];
+				}
+				isCornerTemp |= tempCond[k][n];
+			}
+		}
+	}
+	*isCorner = isCornerTemp;
+}
 
 void testSortedIdxData(hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > &tsStream, ap_uint<5> size, ap_uint<5> newIdx[OUTER_SIZE])
 {
@@ -1141,7 +1154,7 @@ void testFromTsDataToIdxInnerBoolDataHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[
     convertInterface<2>(inputRawData, size, inStream);
     // The NPC value of sortedIdxStream should be equal to the value of idxData factor.
 	sortedIdxStream<2>(inStream, size, idxData);
-	idxDataToIdxInnerBoolData<4>(idxData, idxBoolData);
+	idxDataToIdxInnerBoolData<4>(idxData, size, idxBoolData);
 //	std::cout << "Idx Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
 //	{
@@ -1166,8 +1179,8 @@ void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OU
 #pragma HLS RESOURCE variable=inStream core=FIFO_SRL
     ap_uint<5> idxData[OUTER_SIZE];
 
-    convertInterface<4>(inputRawData, INNER_SIZE, inStream);
-	sortedIdxStream<5>(inStream, INNER_SIZE, idxData);
+    convertInterface<2>(inputRawData, size, inStream);
+	sortedIdxStream<2>(inStream, size, idxData);
 
 //	std::cout << "Idx Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
@@ -1176,7 +1189,7 @@ void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OU
 //	}
 //	std::cout << std::endl;
 
-	checkInnerIdx<5>(idxData, INNER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkInnerIdx<4>(idxData, INNER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,

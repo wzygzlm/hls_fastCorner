@@ -237,73 +237,17 @@ int main ()
 
     int total_err_cnt = 0;
 	int retval=0;
-//	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
-////	srand((unsigned)time(NULL));
-//	testTimes = 200;
-//
-//    // The raw data for SW and HW are exactly the same, except the data type.
-//	uint32_t testRawDataSW[OUTER_SIZE];
-//	ap_uint<32> testRawDataHW[OUTER_SIZE];
-////	uint8_t outputIdxSW[OUTER_SIZE];
-////	ap_uint<5> outputIdxHW[OUTER_SIZE];
-//
-//	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
-//
-//	uint8_t size = INNER_SIZE;
-//
-//	for(int k = 0; k < testTimes; k++)
-//	{
-//		cout << "Test " << k << ":" << endl;
-//
-//		int err_cnt = 0;
-//
-// 		for (int i = 0; i < size; i++)
-//		{
-// 			testRawDataSW[i]  = rand();
-// 			testRawDataHW[i] = testRawDataSW[i];
-//		}
-//
-// 		// The following pattern is only used to test the boundary behavior.
-// 		// On normal test condition, uncomment them.
-//// 		testRawDataSW[0] = 100000;
-//// 		testRawDataSW[15] = 100000;
-//// 		testRawDataSW[14] = 100000;
-//// 		testRawDataHW[0] = 100000;
-//// 		testRawDataHW[15] = 100000;
-//// 		testRawDataHW[14] = 100000;
-//
-// 		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
-// 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
-//
-//		cout << "isCornerSW is: " << isCornerSW << endl;
-//		cout << "isCornerHW is: " << isCornerHW << endl;
-//
-//		if (isCornerSW != isCornerHW)
-//		{
-//			err_cnt++;
-//		}
-//
-// 		if(err_cnt == 0)
-//		{
-//			cout << "Test " << k << " passed." << endl;
-//		}
-// 		else
-// 		{
-//			cout << "Test " << k << " failed!!!" << endl;
-// 		}
-//		total_err_cnt += err_cnt;
-//		cout << endl;
-//	}
-
-	/******************* Test testConvertandSortedInnerIdxSW module from random value**************************/
+	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 1000;
+	testTimes = 200;
 
-	// The raw data for SW and HW are exactly the same, except the data type.
+    // The raw data for SW and HW are exactly the same, except the data type.
 	uint32_t testRawDataSW[OUTER_SIZE];
 	ap_uint<32> testRawDataHW[OUTER_SIZE];
-	ap_uint<4> outputIdxBoolSW[INNER_SIZE];
-	ap_uint<1> outputIdxBoolHW[INNER_SIZE][4];
+//	uint8_t outputIdxSW[OUTER_SIZE];
+//	ap_uint<5> outputIdxHW[OUTER_SIZE];
+
+	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
 
 	uint8_t size = INNER_SIZE;
 
@@ -313,45 +257,101 @@ int main ()
 
 		int err_cnt = 0;
 
-		for (int i = 0; i < size; i++)
+ 		for (int i = 0; i < size; i++)
 		{
-			testRawDataSW[i]  = rand();
-
-		}
-		for (int i = 0; i < size; i++)
-		{
-			for(int j = i + 1; j < size; j++)
-			if(testRawDataSW[i] == testRawDataSW[j])  // If the same, generate again.
-				testRawDataSW[j]  = rand();
-
-			testRawDataHW[i] = testRawDataSW[i];
+ 			testRawDataSW[i]  = rand();
+ 			testRawDataHW[i] = testRawDataSW[i];
 		}
 
-		testFromTsDataToIdxInnerBoolDataHW(testRawDataHW, size, outputIdxBoolHW);
-		testConvertandSortedInnerIdxSW(testRawDataSW, outputIdxBoolSW);
+ 		// The following pattern is only used to test the boundary behavior.
+ 		// On normal test condition, uncomment them.
+// 		testRawDataSW[0] = 100000;
+// 		testRawDataSW[15] = 100000;
+// 		testRawDataSW[14] = 100000;
+// 		testRawDataHW[0] = 100000;
+// 		testRawDataHW[15] = 100000;
+// 		testRawDataHW[14] = 100000;
 
-		for (int  j = 0; j < INNER_SIZE; j++)
+ 		testFromTsDataCheckInnerCornerHW(testRawDataHW, size, &isCornerHW);
+ 		testFromTsDataCheckInnerCornerSW(testRawDataSW, size, &isCornerSW);
+
+		cout << "isCornerSW is: " << isCornerSW << endl;
+		cout << "isCornerHW is: " << isCornerHW << endl;
+
+		if (isCornerSW != isCornerHW)
 		{
-			for (int i = 0; i < 4; i++ )
-			{
-				if (outputIdxBoolSW[j][i] != outputIdxBoolHW[j][i])
-				{
-					err_cnt++;
-				}
-			}
+			err_cnt++;
 		}
 
-		if(err_cnt == 0)
+ 		if(err_cnt == 0)
 		{
 			cout << "Test " << k << " passed." << endl;
 		}
-		else
-		{
+ 		else
+ 		{
 			cout << "Test " << k << " failed!!!" << endl;
-		}
+ 		}
 		total_err_cnt += err_cnt;
 		cout << endl;
 	}
+
+//	/******************* Test testConvertandSortedInnerIdxSW module from random value**************************/
+////	srand((unsigned)time(NULL));
+//	testTimes = 1000;
+//
+//	// The raw data for SW and HW are exactly the same, except the data type.
+//	uint32_t testRawDataSW[OUTER_SIZE];
+//	ap_uint<32> testRawDataHW[OUTER_SIZE];
+//	ap_uint<4> outputIdxBoolSW[INNER_SIZE];
+//	ap_uint<1> outputIdxBoolHW[INNER_SIZE][4];
+//
+//	uint8_t size = INNER_SIZE;
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+//		for (int i = 0; i < size; i++)
+//		{
+//			testRawDataSW[i]  = rand();
+//
+//		}
+//		for (int i = 0; i < size; i++)
+//		{
+//			for(int j = i + 1; j < size; j++)
+//			if(testRawDataSW[i] == testRawDataSW[j])  // If the same, generate again.
+//				testRawDataSW[j]  = rand();
+//
+//			testRawDataHW[i] = testRawDataSW[i];
+//		}
+//
+//		testFromTsDataToIdxInnerBoolDataHW(testRawDataHW, size, outputIdxBoolHW);
+//		testConvertandSortedInnerIdxSW(testRawDataSW, outputIdxBoolSW);
+//
+//		for (int  j = 0; j < INNER_SIZE; j++)
+//		{
+//			for (int i = 0; i < 4; i++ )
+//			{
+//				if (outputIdxBoolSW[j][i] != outputIdxBoolHW[j][i])
+//				{
+//					err_cnt++;
+//				}
+//			}
+//		}
+//
+//		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+//		else
+//		{
+//			cout << "Test " << k << " failed!!!" << endl;
+//		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
 //	/******************* Test testFromTsDataToIdxData module from random value**************************/
 ////	srand((unsigned)time(NULL));
