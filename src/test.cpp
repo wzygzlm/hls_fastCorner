@@ -19,13 +19,13 @@ static const int sensor_width_ = 240;
 static const int sensor_height_ = 180;
 
 // SAE (Surface of Active Event)
-static uint32_t saeSW[1][DVS_HEIGHT][DVS_WIDTH];
+static int sae_[2][DVS_HEIGHT][DVS_WIDTH];
 
-const int innerCircleOffset[INNER_SIZE][2] = {{0, 3}, {1, 3}, {2, 2}, {3, 1},
+const int circle3_[INNER_SIZE][2] = {{0, 3}, {1, 3}, {2, 2}, {3, 1},
       {3, 0}, {3, -1}, {2, -2}, {1, -3},
       {0, -3}, {-1, -3}, {-2, -2}, {-3, -1},
       {-3, 0}, {-3, 1}, {-2, 2}, {-1, 3}};
-const int outerCircleOffset[OUTER_SIZE][2] = {{0, 4}, {1, 4}, {2, 3}, {3, 2},
+const int circle4_[OUTER_SIZE][2] = {{0, 4}, {1, 4}, {2, 3}, {3, 2},
       {4, 1}, {4, 0}, {4, -1}, {3, -2},
       {2, -3}, {1, -4}, {0, -4}, {-1, -4},
       {-2, -3}, {-3, -2}, {-4, -1}, {-4, 0},
@@ -106,10 +106,10 @@ void rwSAESW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stag
 
 	if(stage == 0)
 	{
-		saeSW[0][y][x] = ts;
+		sae_[0][y][x] = ts;
 		for(ap_uint<8> i = 0; i < INNER_SIZE; i = i + 1)
 		{
-			outputData[i] = saeSW[0][y + innerCircleOffset[i][1]][x + innerCircleOffset[i][0]];
+			outputData[i] = sae_[0][y + circle3_[i][1]][x + circle3_[i][0]];
 		}
 		*size = INNER_SIZE;
 	}
@@ -117,7 +117,7 @@ void rwSAESW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stag
 	{
 		for(ap_uint<8> i = 0; i < OUTER_SIZE; i = i + 1)
 		{
-			outputData[i] = saeSW[0][y + outerCircleOffset[i][1]][x + outerCircleOffset[i][0]];
+			outputData[i] = sae_[0][y + circle4_[i][1]][x + circle4_[i][0]];
 		}
 		*size = OUTER_SIZE;
 	}
@@ -456,6 +456,72 @@ int main ()
 
     int total_err_cnt = 0;
 	int retval=0;
+
+	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
+//	srand((unsigned)time(NULL));
+	testTimes = 1000;
+
+	// The raw data for SW and HW are exactly the same, except the data type.
+	uint32_t x, y;
+	uint32_t ts[testTimes];
+	bool pol;
+//	uint8_t outputIdxSW[OUTER_SIZE];
+//	ap_uint<5> outputIdxHW[OUTER_SIZE];
+
+	bool isCornerSW = 0;
+	ap_uint<1>  isCornerHW = 0;
+
+	uint8_t size = INNER_SIZE;
+
+	for (int i = 0; i < testTimes; i++)
+	{
+		ts[i]  = rand();
+	}
+	sort(ts, ts+testTimes);
+
+	for(int k = 0; k < testTimes; k++)
+	{
+		cout << "Test " << k << ":" << endl;
+
+		int err_cnt = 0;
+
+// 	    cout << "\nArray after sorting using "
+// 	         "default sort is : \n";
+// 	    for (int i = 0; i < eventCnt; ++i)
+// 	        cout << ts[i] << " ";
+
+			x = rand()%50 + 20;
+			y = rand()%50 + 20;
+//			idx = rand()%3;
+	//		x = 255;
+	//		y = 240;
+			cout << "x : " << x << endl;
+			cout << "y : " << y << endl;
+			cout << "ts : " << ts[k] << endl;
+
+		fastCornerHW(x, y, ts[k], 0, &isCornerHW);
+		FastDetectorisInnerFeature(x, y, ts[k], pol, &isCornerSW);
+
+		cout << "isCornerSW is: " << isCornerSW << endl;
+		cout << "isCornerHW is: " << isCornerHW << endl;
+
+		if (isCornerSW != isCornerHW.to_bool())
+		{
+			err_cnt++;
+		}
+
+		if(err_cnt == 0)
+		{
+			cout << "Test " << k << " passed." << endl;
+		}
+		else
+		{
+			cout << "Test " << k << " failed!!!" << endl;
+		}
+		total_err_cnt += err_cnt;
+		cout << endl;
+	}
+
 //	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
 ////	srand((unsigned)time(NULL));
 //	testTimes = 1000;
