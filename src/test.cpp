@@ -15,6 +15,9 @@ const static int MAX_NUMBER=1000;
 #define DTYPE ap_uint<32>
 #define TEST_TIMES 200
 
+static const int sensor_width_ = 240;
+static const int sensor_height_ = 180;
+
 // SAE (Surface of Active Event)
 static uint32_t saeSW[1][DVS_HEIGHT][DVS_WIDTH];
 
@@ -257,6 +260,196 @@ void testFromTsDataCheckInnerCornerSW(uint32_t rawData[OUTER_SIZE], uint8_t size
 
 }
 
+void FastDetectorisInnerFeature(int pix_x, int pix_y, int timesmp, bool polarity, bool *found_streak)
+{
+
+  // update SAE
+  //const int pol = polarity ? 1 : 0; //conver plo to 1 or 0
+  const int pol = 0;
+  sae_[pol][pix_x][pix_y] = timesmp;//
+
+  const int max_scale = 1;
+
+  // only check if not too close to border
+  const int cs = max_scale*4;
+  if (pix_x < cs || pix_x >= sensor_width_-cs ||
+      pix_y < cs || pix_y >= sensor_height_-cs)
+  {
+    *found_streak = false;
+  }
+
+  *found_streak = false;
+
+  isFeatureOutterLoop:for (int i=0; i<16; i++)
+  {
+    FastDetectorisFeature_label2:for (int streak_size = 3; streak_size<=6; streak_size++)
+    {
+      // check that streak event is larger than neighbor
+      if ((sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]]) <  (sae_[pol][pix_x+circle3_[(i-1+16)%16][0]][pix_y+circle3_[(i-1+16)%16][1]]))
+        continue;
+
+      // check that streak event is larger than neighbor
+      if (sae_[pol][pix_x+circle3_[(i+streak_size-1)%16][0]][pix_y+circle3_[(i+streak_size-1)%16][1]] < sae_[pol][pix_x+circle3_[(i+streak_size)%16][0]][pix_y+circle3_[(i+streak_size)%16][1]])
+        continue;
+
+      // find the smallest timestamp in corner min_t
+      double min_t = sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]];
+      FastDetectorisFeature_label1:for (int j=1; j<streak_size; j++)
+      {
+        const double tj = sae_[pol][pix_x+circle3_[(i+j)%16][0]][pix_y+circle3_[(i+j)%16][1]];
+        if (tj < min_t)
+          min_t = tj;
+      }
+
+      //check if corner timestamp is higher than corner
+      bool did_break = false;
+      FastDetectorisFeature_label0:for (int j=streak_size; j<16; j++)
+      {
+        const double tj = sae_[pol][pix_x+circle3_[(i+j)%16][0]][pix_y+circle3_[(i+j)%16][1]];
+
+        if (tj >= min_t)
+        {
+          did_break = true;
+          break;
+        }
+      }
+
+      if (!did_break)
+      {
+        *found_streak = true;
+        break;
+      }
+
+
+    if (*found_streak)
+    {
+      break;
+    }
+
+  }
+}
+}
+
+void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, bool *found_streak)
+{
+
+  // update SAE
+  //const int pol = polarity ? 1 : 0; //conver plo to 1 or 0
+  const int pol = 0;
+  sae_[pol][pix_x][pix_y] = timesmp;//
+
+  const int max_scale = 1;
+
+  // only check if not too close to border
+  const int cs = max_scale*4;
+  if (pix_x < cs || pix_x >= sensor_width_-cs ||
+      pix_y < cs || pix_y >= sensor_height_-cs)
+  {
+    *found_streak = false;
+  }
+
+  *found_streak = false;
+
+  isFeatureOutterLoop:for (int i=0; i<16; i++)
+  {
+    FastDetectorisFeature_label2:for (int streak_size = 3; streak_size<=6; streak_size++)
+    {
+      // check that streak event is larger than neighbor
+      if ((sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]]) <  (sae_[pol][pix_x+circle3_[(i-1+16)%16][0]][pix_y+circle3_[(i-1+16)%16][1]]))
+        continue;
+
+      // check that streak event is larger than neighbor
+      if (sae_[pol][pix_x+circle3_[(i+streak_size-1)%16][0]][pix_y+circle3_[(i+streak_size-1)%16][1]] < sae_[pol][pix_x+circle3_[(i+streak_size)%16][0]][pix_y+circle3_[(i+streak_size)%16][1]])
+        continue;
+
+      // find the smallest timestamp in corner min_t
+      double min_t = sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]];
+      FastDetectorisFeature_label1:for (int j=1; j<streak_size; j++)
+      {
+        const double tj = sae_[pol][pix_x+circle3_[(i+j)%16][0]][pix_y+circle3_[(i+j)%16][1]];
+        if (tj < min_t)
+          min_t = tj;
+      }
+
+      //check if corner timestamp is higher than corner
+      bool did_break = false;
+      FastDetectorisFeature_label0:for (int j=streak_size; j<16; j++)
+      {
+        const double tj = sae_[pol][pix_x+circle3_[(i+j)%16][0]][pix_y+circle3_[(i+j)%16][1]];
+
+        if (tj >= min_t)
+        {
+          did_break = true;
+          break;
+        }
+      }
+
+      if (!did_break)
+      {
+        *found_streak = true;
+        break;
+      }
+
+
+    if (*found_streak)
+    {
+      break;
+    }
+
+  }
+
+  if (*found_streak)
+  {
+    *found_streak = false;
+    FastDetectorisFeature_label6:for (int i=0; i<20; i++)
+    {
+      FastDetectorisFeature_label5:for (int streak_size = 4; streak_size<=8; streak_size++)
+      {
+        // check that first event is larger than neighbor
+        if (sae_[pol][pix_x+circle4_[i][0]][pix_y+circle4_[i][1]] <  sae_[pol][pix_x+circle4_[(i-1+20)%20][0]][pix_y+circle4_[(i-1+20)%20][1]])
+          continue;
+
+        // check that streak event is larger than neighbor
+        if (sae_[pol][pix_x+circle4_[(i+streak_size-1)%20][0]][pix_y+circle4_[(i+streak_size-1)%20][1]] < sae_[pol][pix_x+circle4_[(i+streak_size)%20][0]][pix_y+circle4_[(i+streak_size)%20][1]])
+          continue;
+
+        double min_t = sae_[pol][pix_x+circle4_[i][0]][pix_y+circle4_[i][1]];
+        FastDetectorisFeature_label4:for (int j=1; j<streak_size; j++)
+        {
+          const double tj = sae_[pol][pix_x+circle4_[(i+j)%20][0]][pix_y+circle4_[(i+j)%20][1]];
+          if (tj < min_t)
+            min_t = tj;
+        }
+
+        bool did_break = false;
+        FastDetectorisFeature_label3:for (int j=streak_size; j<20; j++)
+        {
+          const double tj = sae_[pol][pix_x+circle4_[(i+j)%20][0]][pix_y+circle4_[(i+j)%20][1]];
+          if (tj >= min_t)
+          {
+            did_break = true;
+            break;
+          }
+        }
+
+        if (!did_break)
+        {
+          *found_streak = true;
+          break;
+        }
+      }
+      if (*found_streak)
+      {
+        break;
+      }
+    }
+  }
+
+  //return *found_streak;
+}
+}
+
+
 int main ()
  {
 	int testTimes = TEST_TIMES;
@@ -445,57 +638,57 @@ int main ()
 //		cout << endl;
 //	}
 
-	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
-//	srand((unsigned)time(NULL));
-	testTimes = 1000;
-
-    // The raw data for SW and HW are exactly the same, except the data type.
-	int idxDataSW[OUTER_SIZE];
-	ap_uint<5> idxDataHW[OUTER_SIZE];
-	ap_uint<5> outputIdxBoolSW[OUTER_SIZE];
-	ap_uint<4> outputIdxBoolHW[OUTER_SIZE];
-
-	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
-
-	uint8_t size = 18;
-
-	for(int k = 0; k < testTimes; k++)
-	{
-		cout << "Test " << k << ":" << endl;
-
-		int err_cnt = 0;
-
- 		for (int i = 0; i < size; i++)
-		{
- 			idxDataSW[i]  = rand()%size;
- 			idxDataHW[i] = idxDataSW[i];
-		}
-
- 		testIdxDataToIdxInnerBoolDataSW(idxDataSW, size, outputIdxBoolSW);
- 		testIdxDataToIdxInnerBoolDataHW(idxDataHW, size, outputIdxBoolHW);
-
-		for (int  j = 0; j < 18; j++)
-		{
-			for (int i = 0; i < 4; i++ )
-			{
-				if (outputIdxBoolSW[j][i] != outputIdxBoolHW[j][i])
-				{
-					err_cnt++;
-				}
-			}
-		}
-
- 		if(err_cnt == 0)
-		{
-			cout << "Test " << k << " passed." << endl;
-		}
- 		else
- 		{
-			cout << "Test " << k << " failed!!!" << endl;
- 		}
-		total_err_cnt += err_cnt;
-		cout << endl;
-	}
+//	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
+////	srand((unsigned)time(NULL));
+//	testTimes = 1000;
+//
+//    // The raw data for SW and HW are exactly the same, except the data type.
+//	int idxDataSW[OUTER_SIZE];
+//	ap_uint<5> idxDataHW[OUTER_SIZE];
+//	ap_uint<5> outputIdxBoolSW[OUTER_SIZE];
+//	ap_uint<4> outputIdxBoolHW[OUTER_SIZE];
+//
+//	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
+//
+//	uint8_t size = 18;
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+// 		for (int i = 0; i < size; i++)
+//		{
+// 			idxDataSW[i]  = rand()%size;
+// 			idxDataHW[i] = idxDataSW[i];
+//		}
+//
+// 		testIdxDataToIdxInnerBoolDataSW(idxDataSW, size, outputIdxBoolSW);
+// 		testIdxDataToIdxInnerBoolDataHW(idxDataHW, size, outputIdxBoolHW);
+//
+//		for (int  j = 0; j < 18; j++)
+//		{
+//			for (int i = 0; i < 4; i++ )
+//			{
+//				if (outputIdxBoolSW[j][i] != outputIdxBoolHW[j][i])
+//				{
+//					err_cnt++;
+//				}
+//			}
+//		}
+//
+// 		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+// 		else
+// 		{
+//			cout << "Test " << k << " failed!!!" << endl;
+// 		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
 //	/******************* Test rwSAE module from random value**************************/
 //	srand((unsigned)time(NULL));
