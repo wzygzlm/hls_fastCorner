@@ -197,7 +197,7 @@ assert(size <= OUTER_SIZE);
 	for(uint8_t i = 0; i < OUTER_SIZE/NPC; i = i + 1)
 	{
 // #pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
-#pragma HLS PIPELINE
+#pragma HLS PIPELINE rewind
 		if (i * NPC >= size)
 		{
 			break;
@@ -369,7 +369,7 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 //		*isCorner = isCornerTemp;
 //		return;
 //	}
-	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)   // This multipler fomr is easier to understand but consume more resources.
+	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)   // This multipler form is easier to understand but consume more resources.
 	{
 #pragma HLS LOOP_TRIPCOUNT min=0 max=16/NPC
 #pragma HLS PIPELINE
@@ -388,7 +388,7 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 			// However, in order to make the idxSorted could be shared by inner circle and outer circle together.
 			// We use a method that compare "size" values to all the input data which has OUTER_SIZE values in total.
 			// On the other hand, if the valid input data number is less than OUTER_SIZE, the other input data will be filled with 0.
-			// Thus, all the idxData for inner circle value will be added 4 (OUTER_SIZE - INNER_SIZE = 20 - 16 =4)
+			// Thus, all the idxData for inner circle value will be added 4 (OUTER_SIZE - INNER_SIZE = 20 - 16 = 4)
 			// When we check the innner idx data, we need to remove it.
 			cond[0][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
 		}
@@ -732,25 +732,36 @@ void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
 	saeHW[0][y/RESHAPE_FACTOR][x] = tmpData;
 }
 
+void getXandY(const uint64_t * data, X_TYPE *x, Y_TYPE *y, ap_uint<TS_TYPE_BIT_WIDTH> *ts, hls::stream<apUint17_t> &packetEventDataStream)
+{
+#pragma HLS PIPELINE
+	uint64_t tmp = *data;
+	*x = ((tmp) >> POLARITY_X_ADDR_SHIFT) & POLARITY_X_ADDR_MASK;
+	*y = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
+	bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
+	*ts = tmp >> 32;
+}
+
 
 template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
 void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
 {
+//#pragma HLS RESOURCE variable=saeHW core=RAM_T2P_BRAM
 #pragma HLS INLINE off
 	if(stage == 0)
 	{
-		updateSAE(x, y, ts);
+//		updateSAE(x, y, ts);
 
-		readInnerCircleFromSAE:for(ap_uint<8> i = 0; i < INNER_SIZE; i = i + READ_NPC)
+		readInnerCircleFromSAE:for(ap_uint<8> i = 0; i < INNER_SIZE + 1; i = i + READ_NPC)
 		{
 	#pragma HLS DEPENDENCE variable=saeHW inter false
 	#pragma HLS PIPELINE rewind
-//			if (i >= INNER_SIZE)
-//			{
-//				updateSAE(x, y, ts);
-//			}
-//			else
-//			{
+			if (i >= INNER_SIZE)
+			{
+				updateSAE(x, y, ts);
+			}
+			else
+			{
 	            ap_uint<8 * READ_NPC> xInnerTest, xOuterTest;
 	            X_TYPE xInner[READ_NPC];
 	            Y_TYPE yInner[READ_NPC], yInnerNewIdx[READ_NPC];
@@ -780,7 +791,7 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 	//			Y_TYPE yOuterNewIdx = yOuter%RESHAPE_FACTOR;
 	//
 	//			outerCircle[i] = readOneDataFromCol(saeHW[0][yOuter/RESHAPE_FACTOR][xOuter], yOuterNewIdx);
-//			}
+			}
 		}
 
 		*size = INNER_SIZE;
@@ -1410,7 +1421,49 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
     rwSAE<2>(x, y, ts, stage, outer, &size);
 //    sortedIdxData<2>(outer, size, idxData);
     convertInterface<4>(outer, size, inStream);
-	sortedIdxStream<2>(inStream, size, idxData);
+	sortedIdxStream<4>(inStream, size, idxData);
 	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
+void outputResult(ap_uint<1> isCorner,  hls::stream<apUint17_t> &packetEventDataStream, int32_t *eventSlice)
+{
+	apUint17_t tmp1 = packetEventDataStream.read();
+//	apUint15_t miniSumRet = 0;
+//	ap_int<9> tmp2 = miniSumRet.range(8, 0);
+//	apUint6_t tmpOF = isCorner;
+
+	ap_uint<32> output = tmp1;
+	output[31] = isCorner;
+//		std :: cout << "tmp1 is "  << std::hex << tmp1 << std :: endl;
+//		std :: cout << "tmp2 is "  << std::hex << tmp2 << std :: endl;
+//		std :: cout << "output is "  << std::hex << output << std :: endl;
+//		std :: cout << "eventSlice is "  << std::hex << output.to_int() << std :: endl;
+	*eventSlice++ = output.to_int();
+}
+
+void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *eventSlice)
+{
+#pragma HLS DATAFLOW
+    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+
+	hls::stream<apUint17_t> pktEventDataStream("EventStream");
+#pragma HLS STREAM variable=pktEventDataStream depth=2 dim=1
+#pragma HLS RESOURCE variable=pktEventDataStream core=FIFO_SRL
+    ap_uint<5> size;
+    ap_uint<5> idxData[OUTER_SIZE];
+	X_TYPE x;
+	Y_TYPE y;
+	ap_uint<TS_TYPE_BIT_WIDTH> ts;
+	ap_uint<1> isCorner;
+
+	getXandY(dataStream, &x, &y, &ts, pktEventDataStream);
+    rwSAE<2>(x, y, ts, 0, outer, &size);
+//    sortedIdxData<2>(outer, size, idxData);
+    convertInterface<4>(outer, size, inStream);
+	sortedIdxStream<4>(inStream, size, idxData);
+	checkInnerIdx<4>(idxData, size, &isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	outputResult(isCorner, pktEventDataStream, eventSlice++);
+}

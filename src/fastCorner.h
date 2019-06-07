@@ -7,10 +7,22 @@
 #include "ap_axi_sdata.h"
 
 #define DVS_WIDTH  240
+
+#define POLARITY_SHIFT 1
+#define POLARITY_MASK 0x00000001
+#define POLARITY_Y_ADDR_SHIFT 2
+#define POLARITY_Y_ADDR_MASK 0x000001FF      //  Reduce mask bit width to reduce LUTs
+#define POLARITY_X_ADDR_SHIFT 17
+#define POLARITY_X_ADDR_MASK 0x000001FF      //  Reduce mask bit width to reduce LUTs
+
+typedef ap_uint<17> apUint17_t;
+typedef ap_uint<15> apUint15_t;
+typedef ap_uint<6> apUint6_t;
+typedef ap_uint<1> apUint1_t;
+
 // Change these two together
 #define RESHAPE_FACTOR 16
 #define DVS_HEIGHT RESHAPE_FACTOR*8
-
 
 #define X_TYPE ap_uint<8>
 #define Y_TYPE ap_uint<8>
