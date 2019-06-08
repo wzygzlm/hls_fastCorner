@@ -769,7 +769,7 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 	            for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
 	            {
 	#pragma HLS UNROLL
-	            	ap_uint<8> tmpIndex;
+	            	ap_uint<8> tmpIndex;   // In  order to save the resource, we use bit operation to get the index of the inner/outer offset.
 	            	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
 	            	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
 	            	xInnerTest[j] = innerTest[tmpIndex];
@@ -779,8 +779,8 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 	            readNPCLoop:
 	            for (ap_uint<8> k = 0; k < READ_NPC; k++)
 	            {
-	                xInner[k] = x + xInnerTest(8 * k + 3, 8  * k);
-	                yInner[k] = y + xInnerTest(8 * k + 7, 8 * k + 4);
+	                xInner[k] = x + ap_int<3>(xInnerTest(8 * k + 3, 8  * k));  // Change back from unsigned to signed.
+	                yInner[k] = y + ap_int<3>(xInnerTest(8 * k + 7, 8 * k + 4));          // Change back from unsigned to signed.
 	                yInnerNewIdx[k] = yInner[k]%RESHAPE_FACTOR;
 
 	                outputData[i + k] = readOneDataFromCol(saeHW[0][yInner[k]/RESHAPE_FACTOR][xInner[k]], yInnerNewIdx[k]);
@@ -810,7 +810,7 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 	        for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
 	        {
 	#pragma HLS UNROLL
-	        	ap_uint<8> tmpIndex;
+	        	ap_uint<8> tmpIndex; // In  order to save the resource, we use bit operation to get the index of the inner/outer offset.
 	        	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
 	        	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
 	        	xOuterTest[j] = outerTest[tmpIndex];
@@ -819,8 +819,8 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 	        readOuterNPCLoop:
 	        for (ap_uint<8> k = 0; k < READ_NPC; k++)
 	        {
-	            xOuter[k] = x + xOuterTest(8 * k + 3, 8  * k);
-	            yOuter[k] = y + xOuterTest(8 * k + 7, 8 * k + 4);
+	            xOuter[k] = x + ap_int<3>(xOuterTest(8 * k + 3, 8  * k));       // Change back from unsigned to signed.
+	            yOuter[k] = y + ap_int<3>(xOuterTest(8 * k + 7, 8 * k + 4));    // Change back from unsigned to signed.
 	            yOuterNewIdx[k] = yOuter[k]%RESHAPE_FACTOR;
 
 	            outputData[i + k] = readOneDataFromCol(saeHW[0][yOuter[k]/RESHAPE_FACTOR][xOuter[k]], yOuterNewIdx[k]);

@@ -499,7 +499,7 @@ int main ()
 			cout << "y : " << y << endl;
 			cout << "ts : " << ts[k] << endl;
 
-		fastCornerHW(x, y, ts[k], 0, &isCornerHW);
+		fastCornerHW(y, x, ts[k], 0, &isCornerHW);
 		FastDetectorisInnerFeature(x, y, ts[k], pol, &isCornerSW);
 
 		cout << "isCornerSW is: " << isCornerSW << endl;
