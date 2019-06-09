@@ -18,9 +18,11 @@ static col_pix_t saeHW[1][DVS_HEIGHT/RESHAPE_FACTOR][DVS_WIDTH];
 //      {-2, -3}, {-3, -2}, {-4, -1}, {-4, 0},
 //      {-4, 1}, {-3, 2}, {-2, 3}, {-1, 4}};
 
-const ap_int<128> innerTest =  ap_int<128>("03132231303f2e1d0dfdeedfd0d1e2f3", 16);
-const ap_int<160> outerTest = ap_int<160>("0414233241404f3e2d1c0cfceddecfc0c1d2e3f4", 16);
+//const ap_int<128> innerTest =  ap_int<128>("03132231303f2e1d0dfdeedfd0d1e2f3", 16);
+//const ap_int<160> outerTest = ap_int<160>("0414233241404f3e2d1c0cfceddecfc0c1d2e3f4", 16);
 
+const ap_int<128> innerTest =  ap_int<128>("f3e2d1d0dfeefd0d1d2e3f3031221303", 16);
+const ap_int<160> outerTest = ap_int<160>("f4e3d2c1c0cfdeedfc0c1c2d3e4f404132231404", 16);
 
 // Function Description: return the minimum value of an array.
 template<typename DATA_TYPE, int DATA_SIZE>

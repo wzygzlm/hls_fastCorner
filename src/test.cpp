@@ -462,7 +462,7 @@ int main ()
 
 	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 20000;
+	testTimes = 10000;
 
 	// The raw data for SW and HW are exactly the same, except the data type.
 	uint32_t x, y;
