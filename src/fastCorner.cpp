@@ -1478,17 +1478,17 @@ void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uin
 
     rwSAE<2>(x, y, ts, stage, outer, &size);
 
-	std::cout << "Idx Data HW is: " << std::endl;
-	for (int i = 0; i < size; i++)
-	{
-		std::cout << (int)outer[i]<< "\t";
-	}
-	std::cout << std::endl;
+//	std::cout << "Idx Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)outer[i]<< "\t";
+//	}
+//	std::cout << std::endl;
 
 //    sortedIdxData<2>(outer, size, idxData);
     convertInterface<4>(outer, size, inStream);
 	sortedIdxStream<4>(inStream, size, idxData);
-	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkOuterIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner)
