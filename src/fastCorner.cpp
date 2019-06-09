@@ -542,7 +542,7 @@ void checkInnerIdxV2(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap
 
 
 template<int NPC>
-void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
+void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
 #pragma HLS INLINE
 #pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
@@ -550,7 +550,16 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
 	ap_uint<1> isCornerTemp = 0;
 	for(uint8_t i = 0; i < OUTER_SIZE; i = i + NPC)
 	{
-#pragma HLS PIPELINE rewind
+#pragma HLS LOOP_TRIPCOUNT min=0 max=OUTER_SIZE/NPC
+#pragma HLS PIPELINE
+		InitRegion:
+		{
+//#pragma HLS LATENCY min=1
+			if (i * NPC >= size)
+			{
+				break;
+			}
+		}
 		ap_uint<1> cond[5][8 + NPC - 1];
 		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
 		{
@@ -606,9 +615,9 @@ void testCheckInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, 
 	checkInnerIdxV2<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
-void testCheckOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<1> *isCorner)
+void testCheckOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
-	checkOuterIdx<5>(idxData, isCorner);    // NPC = 7 could make II = 1 but we might not need so fast.
+	checkOuterIdx<5>(idxData, size, isCorner);    // NPC = 7 could make II = 1 but we might not need so fast.
 }
 
 void checkIdx(ap_uint<5> inData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
@@ -629,7 +638,7 @@ void checkIdx(ap_uint<5> inData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorn
 		{
 			idxData[i] = inData[i - OUTER_SIZE];
 		}
-		checkOuterIdx<5>(idxData, isCorner);
+		checkOuterIdx<5>(idxData, size, isCorner);
 	}
 	else
 	{
@@ -781,8 +790,8 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 	            readNPCLoop:
 	            for (ap_uint<8> k = 0; k < READ_NPC; k++)
 	            {
-	                xInner[k] = x + ap_int<3>(xInnerTest(8 * k + 3, 8  * k));  // Change back from unsigned to signed.
-	                yInner[k] = y + ap_int<3>(xInnerTest(8 * k + 7, 8 * k + 4));          // Change back from unsigned to signed.
+	                xInner[k] = x + ap_int<4>(xInnerTest(8 * k + 3, 8  * k));  // Change back from unsigned to signed.
+	                yInner[k] = y + ap_int<4>(xInnerTest(8 * k + 7, 8 * k + 4));          // Change back from unsigned to signed.
 	                yInnerNewIdx[k] = yInner[k]%RESHAPE_FACTOR;
 
 	                outputData[i + k] = readOneDataFromCol(saeHW[0][yInner[k]/RESHAPE_FACTOR][xInner[k]], yInnerNewIdx[k]);
@@ -800,35 +809,40 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 	}
 	else if(stage == 1)
 	{
-		readOuterCircleFromSAE:for(ap_uint<8> i = 0; i < OUTER_SIZE; i = i + READ_NPC)
+		readOuterCircleFromSAE:for(ap_uint<8> i = 0; i < OUTER_SIZE + 1; i = i + READ_NPC)
 		{
 	#pragma HLS DEPENDENCE variable=saeHW inter false
 	#pragma HLS PIPELINE rewind
+			if (i >= OUTER_SIZE)
+			{
+				updateSAE(x, y, ts);
+			}
+			else
+			{
+				ap_uint<8 * READ_NPC> xOuterTest;
+				X_TYPE xOuter[READ_NPC];
+				Y_TYPE yOuter[READ_NPC], yOuterNewIdx[READ_NPC];
+				rwSAEReadOuterOffsetBitsLoop:
+				for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+				{
+		#pragma HLS UNROLL
+					ap_uint<8> tmpIndex; // In  order to save the resource, we use bit operation to get the index of the inner/outer offset.
+					tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+					tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+					xOuterTest[j] = outerTest[tmpIndex];
+				}
 
-	        ap_uint<8 * READ_NPC> xOuterTest;
-	        X_TYPE xOuter[READ_NPC];
-	        Y_TYPE yOuter[READ_NPC], yOuterNewIdx[READ_NPC];
-	    	rwSAEReadOuterOffsetBitsLoop:
-	        for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
-	        {
-	#pragma HLS UNROLL
-	        	ap_uint<8> tmpIndex; // In  order to save the resource, we use bit operation to get the index of the inner/outer offset.
-	        	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
-	        	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
-	        	xOuterTest[j] = outerTest[tmpIndex];
-	        }
+				readOuterNPCLoop:
+				for (ap_uint<8> k = 0; k < READ_NPC; k++)
+				{
+					xOuter[k] = x + ap_int<4>(xOuterTest(8 * k + 3, 8  * k));       // Change back from unsigned to signed.
+					yOuter[k] = y + ap_int<4>(xOuterTest(8 * k + 7, 8 * k + 4));    // Change back from unsigned to signed.
+					yOuterNewIdx[k] = yOuter[k]%RESHAPE_FACTOR;
 
-	        readOuterNPCLoop:
-	        for (ap_uint<8> k = 0; k < READ_NPC; k++)
-	        {
-	            xOuter[k] = x + ap_int<3>(xOuterTest(8 * k + 3, 8  * k));       // Change back from unsigned to signed.
-	            yOuter[k] = y + ap_int<3>(xOuterTest(8 * k + 7, 8 * k + 4));    // Change back from unsigned to signed.
-	            yOuterNewIdx[k] = yOuter[k]%RESHAPE_FACTOR;
-
-	            outputData[i + k] = readOneDataFromCol(saeHW[0][yOuter[k]/RESHAPE_FACTOR][xOuter[k]], yOuterNewIdx[k]);
-	        }
+					outputData[i + k] = readOneDataFromCol(saeHW[0][yOuter[k]/RESHAPE_FACTOR][xOuter[k]], yOuterNewIdx[k]);
+				}
+			}
 		}
-
 		*size = OUTER_SIZE;
 	}
 	else
@@ -1379,7 +1393,29 @@ void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OU
 //	}
 //	std::cout << std::endl;
 
-	checkInnerIdx<8>(idxData, INNER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkInnerIdx<4>(idxData, INNER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+}
+
+void testFromTsDataCheckOuterCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
+{
+#pragma HLS DATAFLOW
+    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+    ap_uint<5> idxData[OUTER_SIZE];
+
+    convertInterface<2>(inputRawData, size, inStream);
+	sortedIdxStream<4>(inStream, size, idxData);
+
+//	std::cout << "Idx Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)idxData[i]<< "\t";
+//	}
+//	std::cout << std::endl;
+
+	checkOuterIdx<4>(idxData, INNER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner)
@@ -1407,16 +1443,29 @@ void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uin
 	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
-ap_uint<TS_TYPE_BIT_WIDTH> fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE])
+void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner)
 {
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
-	readOutterCircle<2>(x, y, outer);
-    int8_t index;
-    return min< ap_uint<TS_TYPE_BIT_WIDTH>, OUTER_SIZE >(outer, &index);
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+    ap_uint<5> size;
+    ap_uint<5> idxData[OUTER_SIZE];
 
-//	mergeSortParallel<OUTER_SIZE, MERGE_STAGES>(outer, Outer_B);
-//		insertionSortParallel<OUTER_SIZE, 1>(outer, Outer_B);
+    rwSAE<2>(x, y, ts, stage, outer, &size);
+
+	std::cout << "Idx Data HW is: " << std::endl;
+	for (int i = 0; i < size; i++)
+	{
+		std::cout << (int)outer[i]<< "\t";
+	}
+	std::cout << std::endl;
+
+//    sortedIdxData<2>(outer, size, idxData);
+    convertInterface<4>(outer, size, inStream);
+	sortedIdxStream<4>(inStream, size, idxData);
+	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner)
