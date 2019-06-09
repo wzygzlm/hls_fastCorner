@@ -280,8 +280,10 @@ void FastDetectorisInnerFeature(int pix_x, int pix_y, int timesmp, bool polarity
 
   *found_streak = false;
 
+  std::cout << "Idx Data SW is: " << std::endl;
   isFeatureOutterLoop:for (int i=0; i<16; i++)
   {
+	cout << sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]] << "\t";
     FastDetectorisFeature_label2:for (int streak_size = 3; streak_size<=6; streak_size++)
     {
       // check that streak event is larger than neighbor
@@ -328,6 +330,7 @@ void FastDetectorisInnerFeature(int pix_x, int pix_y, int timesmp, bool polarity
 
   }
 }
+	std::cout << std::endl;
 }
 
 void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, bool *found_streak)
@@ -459,7 +462,7 @@ int main ()
 
 	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 1000;
+	testTimes = 20000;
 
 	// The raw data for SW and HW are exactly the same, except the data type.
 	uint32_t x, y;
@@ -468,8 +471,8 @@ int main ()
 //	uint8_t outputIdxSW[OUTER_SIZE];
 //	ap_uint<5> outputIdxHW[OUTER_SIZE];
 
-	bool isCornerSW = 0;
-	ap_uint<1>  isCornerHW = 0;
+	bool isInnerCornerSW = 0;
+	ap_uint<1>  isInnerCornerHW = 0;
 
 	uint8_t size = INNER_SIZE;
 
@@ -499,13 +502,13 @@ int main ()
 			cout << "y : " << y << endl;
 			cout << "ts : " << ts[k] << endl;
 
-		fastCornerHW(y, x, ts[k], 0, &isCornerHW);
-		FastDetectorisInnerFeature(x, y, ts[k], pol, &isCornerSW);
+		FastDetectorisInnerFeature(x, y, ts[k], pol, &isInnerCornerSW);
+		fastCornerInnerHW(y, x, ts[k], 0, &isInnerCornerHW);
 
-		cout << "isCornerSW is: " << isCornerSW << endl;
-		cout << "isCornerHW is: " << isCornerHW << endl;
+		cout << "isCornerSW is: " << isInnerCornerSW << endl;
+		cout << "isCornerHW is: " << isInnerCornerHW << endl;
 
-		if (isCornerSW != isCornerHW.to_bool())
+		if (isInnerCornerSW != isInnerCornerHW.to_bool())
 		{
 			err_cnt++;
 		}

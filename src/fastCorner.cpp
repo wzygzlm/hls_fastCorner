@@ -1380,20 +1380,29 @@ void testFromTsDataCheckInnerCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OU
 	checkInnerIdx<8>(idxData, INNER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
-void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
-		ap_uint<TS_TYPE_BIT_WIDTH> innerSort[INNER_SIZE], ap_uint<TS_TYPE_BIT_WIDTH> outerSort[OUTER_SIZE])
+void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner)
 {
 #pragma HLS DATAFLOW
-    ap_uint<TS_TYPE_BIT_WIDTH> inner[INNER_SIZE];
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS STREAM variable=inStream depth=2 dim=1
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
     ap_uint<5> size;
-    int8_t index;
-    rwSAE<2>(x, y, ts, stage, outer, &size);
-    mergeSortParallelWithSize(outer, size, outerSort);
-//    return min< ap_uint<TS_TYPE_BIT_WIDTH>, INNER_SIZE >(inner, &index);
+    ap_uint<5> idxData[OUTER_SIZE];
 
-//    insertionSortParallel<OUTER_SIZE, 1>(outer, outerSort);
-//	mergeSortParallel<INNER_SIZE, 4>(inner, innerSort);
+    rwSAE<2>(x, y, ts, stage, outer, &size);
+
+//	std::cout << "Idx Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)outer[i]<< "\t";
+//	}
+//	std::cout << std::endl;
+
+//    sortedIdxData<2>(outer, size, idxData);
+    convertInterface<4>(outer, size, inStream);
+	sortedIdxStream<4>(inStream, size, idxData);
+	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 ap_uint<TS_TYPE_BIT_WIDTH> fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> Outer_B[OUTER_SIZE])
@@ -1419,6 +1428,14 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
     ap_uint<5> idxData[OUTER_SIZE];
 
     rwSAE<2>(x, y, ts, stage, outer, &size);
+
+//	std::cout << "Idx Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)outer[i]<< "\t";
+//	}
+//	std::cout << std::endl;
+
 //    sortedIdxData<2>(outer, size, idxData);
     convertInterface<4>(outer, size, inStream);
 	sortedIdxStream<4>(inStream, size, idxData);
