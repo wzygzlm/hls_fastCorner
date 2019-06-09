@@ -473,14 +473,14 @@ void checkInnerIdxV2(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap
 //		*isCorner = isCornerTemp;
 //		return;
 //	}
-	for(uint8_t i = 0; i <= OUTER_SIZE/NPC; i = i + 1)
+	for(uint8_t i = 0; i < OUTER_SIZE; i = i + NPC)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=0 max=16/NPC
 #pragma HLS PIPELINE
 		InitRegion:
 		{
 //#pragma HLS LATENCY min=1
-			if (i * NPC >= size)
+			if (i >= size)
 			{
 				break;
 			}
@@ -494,25 +494,25 @@ void checkInnerIdxV2(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap
 			// On the other hand, if the valid input data number is less than OUTER_SIZE, the other input data will be filled with 0.
 			// Thus, all the idxData for inner circle value will be added 4 (OUTER_SIZE - INNER_SIZE = 20 - 16 =4)
 			// When we check the innner idx data, we need to remove it.
-			cond[0][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
+			cond[0][m] = (idxData[(i + m)%16] >= INNER_SIZE - 3 + OUTER_SIZE - INNER_SIZE);
 		}
 
 		ap_uint<1> cond2[4 + NPC - 1];
 		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
 		{
-			cond[1][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 4 + OUTER_SIZE - INNER_SIZE);
+			cond[1][m] = (idxData[(i + m)%16] >= INNER_SIZE - 4 + OUTER_SIZE - INNER_SIZE);
 		}
 
 		ap_uint<1> cond3[5 + NPC - 1];
 		for (uint8_t m = 0; m < 5 + NPC - 1; m++)
 		{
-			cond[2][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 5 + OUTER_SIZE - INNER_SIZE);
+			cond[2][m] = (idxData[(i + m)%16] >= INNER_SIZE - 5 + OUTER_SIZE - INNER_SIZE);
 		}
 
 		ap_uint<1> cond4[6 + NPC - 1];
 		for (uint8_t m = 0; m < 6 + NPC - 1; m++)
 		{
-			cond[3][m] = (idxData[(i * NPC + m)%16] >= INNER_SIZE - 6 + OUTER_SIZE - INNER_SIZE);
+			cond[3][m] = (idxData[(i + m)%16] >= INNER_SIZE - 6 + OUTER_SIZE - INNER_SIZE);
 		}
 
 		ap_uint<1> tempCond[4][NPC];
@@ -550,12 +550,12 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_u
 	ap_uint<1> isCornerTemp = 0;
 	for(uint8_t i = 0; i < OUTER_SIZE; i = i + NPC)
 	{
-#pragma HLS LOOP_TRIPCOUNT min=0 max=OUTER_SIZE/NPC
+#pragma HLS LOOP_TRIPCOUNT min=0 max=20/NPC
 #pragma HLS PIPELINE
 		InitRegion:
 		{
 //#pragma HLS LATENCY min=1
-			if (i * NPC >= size)
+			if (i >= size)
 			{
 				break;
 			}
@@ -563,31 +563,46 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_u
 		ap_uint<1> cond[5][8 + NPC - 1];
 		for (uint8_t m = 0; m < 4 + NPC - 1; m++)
 		{
-			cond[0][m] = (idxData[i + m] >= OUTER_SIZE - 4);
+			ap_uint<5> tmpIdx = i + m;
+			if (tmpIdx >= OUTER_SIZE) tmpIdx = tmpIdx - OUTER_SIZE;
+
+			cond[0][m] = (idxData[tmpIdx] >= OUTER_SIZE - 4);
 		}
 
 		ap_uint<1> cond2[5 + NPC - 1];
 		for (uint8_t m = 0; m < 5 + NPC - 1; m++)
 		{
-			cond[1][m] = (idxData[i + m] >= OUTER_SIZE - 5);
+			ap_uint<5> tmpIdx = i + m;
+			if (tmpIdx >= OUTER_SIZE) tmpIdx = tmpIdx - OUTER_SIZE;
+
+			cond[1][m] = (idxData[tmpIdx] >= OUTER_SIZE - 5);
 		}
 
 		ap_uint<1> cond3[6 + NPC - 1];
 		for (uint8_t m = 0; m < 6 + NPC - 1; m++)
 		{
-			cond[2][m] = (idxData[i + m] >= OUTER_SIZE - 6);
+			ap_uint<5> tmpIdx = i + m;
+			if (tmpIdx >= OUTER_SIZE) tmpIdx = tmpIdx - OUTER_SIZE;
+
+			cond[2][m] = (idxData[tmpIdx] >= OUTER_SIZE - 6);
 		}
 
 		ap_uint<1> cond4[7 + NPC - 1];
 		for (uint8_t m = 0; m < 7 + NPC - 1; m++)
 		{
-			cond[3][m] = (idxData[i + m] >= OUTER_SIZE - 7);
+			ap_uint<5> tmpIdx = i + m;
+			if (tmpIdx >= OUTER_SIZE) tmpIdx = tmpIdx - OUTER_SIZE;
+
+			cond[3][m] = (idxData[tmpIdx] >= OUTER_SIZE - 7);
 		}
 
 		ap_uint<1> cond5[8 + NPC - 1];
 		for (uint8_t m = 0; m < 8 + NPC - 1; m++)
 		{
-			cond[4][m] = (idxData[i + m] >= OUTER_SIZE - 8);
+			ap_uint<5> tmpIdx = i + m;
+			if (tmpIdx >= OUTER_SIZE) tmpIdx = tmpIdx - OUTER_SIZE;
+
+			cond[4][m] = (idxData[tmpIdx] >= OUTER_SIZE - 8);
 		}
 
 		ap_uint<1> tempCond[5][NPC];
@@ -602,6 +617,14 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_u
 					tempCond[n][k] &= cond[n][j + k];
 				}
 				isCornerTemp |= tempCond[n][k];
+
+//				if (isCornerTemp == 1)
+//				{
+//					*isCorner = isCornerTemp ;
+//					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 4) << std::endl;
+//					return;
+//				}
+
 			}
 		}
 
@@ -1415,7 +1438,7 @@ void testFromTsDataCheckOuterCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OU
 //	}
 //	std::cout << std::endl;
 
-	checkOuterIdx<4>(idxData, INNER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkOuterIdx<4>(idxData, OUTER_SIZE, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
 void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner)

@@ -260,6 +260,36 @@ void testFromTsDataCheckInnerCornerSW(uint32_t rawData[OUTER_SIZE], uint8_t size
 
 }
 
+void testFromTsDataCheckOuterCornerSW(uint32_t rawData[OUTER_SIZE], uint8_t size, ap_uint<1> *isCorner)
+{
+	uint8_t idxData[OUTER_SIZE];
+
+	testConvertandSortedIdxSW(rawData, OUTER_SIZE, idxData);
+
+	*isCorner = 0;
+
+	for (int streak_size = 4; streak_size<=8; streak_size++)
+	{
+		for (uint8_t i = 0; i < OUTER_SIZE; i++)
+		{
+			ap_uint<1> tempCond = 1;
+			uint8_t j =  0;
+			for (j =  0; j < streak_size; j++)
+			{
+				uint8_t tmpData = ((i + j) >= OUTER_SIZE) ? idxData[i + j - OUTER_SIZE] : idxData[i + j];
+				tempCond &= (tmpData >= (OUTER_SIZE - streak_size));
+			}
+			if (tempCond == 1)
+			{
+				*isCorner = 1;
+				cout << "Position is :" << (int)i << " and streak size is: " << (int)j << endl;
+				return;
+			}
+		}
+	}
+
+}
+
 void FastDetectorisInnerFeature(int pix_x, int pix_y, int timesmp, bool polarity, bool *found_streak)
 {
 
@@ -356,7 +386,7 @@ void FastDetectorisOuterFeature(int pix_x, int pix_y, int timesmp, bool polarity
 
 	FastDetectorisFeature_label6:for (int i=0; i<20; i++)
 	{
-		cout << sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]] << "\t";
+		cout << sae_[pol][pix_x+circle4_[i][0]][pix_y+circle4_[i][1]] << "\t";
 
 	  FastDetectorisFeature_label5:for (int streak_size = 4; streak_size<=8; streak_size++)
 	  {
@@ -531,72 +561,72 @@ int main ()
     int total_err_cnt = 0;
 	int retval=0;
 
-	/******************* Test FastCheckOuterCornerSW module from random value**************************/
-//	srand((unsigned)time(NULL));
-	testTimes = 1000;
+//	/******************* Test FastCheckOuterCornerSW module from random value**************************/
+////	srand((unsigned)time(NULL));
+//	testTimes = 1000;
+//
+//	// The raw data for SW and HW are exactly the same, except the data type.
+//	uint32_t x, y;
+//	uint32_t ts[testTimes];
+//	bool pol;
+////	uint8_t outputIdxSW[OUTER_SIZE];
+////	ap_uint<5> outputIdxHW[OUTER_SIZE];
+//
+//	bool isOuterCornerSW = 0;
+//	ap_uint<1>  isOuterCornerHW = 0;
+//
+//	uint8_t size = OUTER_SIZE;
+//
+//	for (int i = 0; i < testTimes; i++)
+//	{
+//		ts[i]  = rand();
+//	}
+//	sort(ts, ts+testTimes);
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+//// 	    cout << "\nArray after sorting using "
+//// 	         "default sort is : \n";
+//// 	    for (int i = 0; i < eventCnt; ++i)
+//// 	        cout << ts[i] << " ";
+//
+//			x = rand()%50 + 20;
+//			y = rand()%50 + 20;
+////			idx = rand()%3;
+//	//		x = 255;
+//	//		y = 240;
+//			cout << "x : " << x << endl;
+//			cout << "y : " << y << endl;
+//			cout << "ts : " << ts[k] << endl;
+//
+//	    FastDetectorisOuterFeature(x, y, ts[k], pol, &isOuterCornerSW);
+//		fastCornerOuterHW(y, x, ts[k], 1, &isOuterCornerHW);
+//
+//		cout << "isCornerSW is: " << isOuterCornerSW << endl;
+//		cout << "isCornerHW is: " << isOuterCornerHW << endl;
+//
+//		if (isOuterCornerSW != isOuterCornerHW.to_bool())
+//		{
+//			err_cnt++;
+//		}
+//
+//		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+//		else
+//		{
+//			cout << "Test " << k << " failed!!!" << endl;
+//		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
-	// The raw data for SW and HW are exactly the same, except the data type.
-	uint32_t x, y;
-	uint32_t ts[testTimes];
-	bool pol;
-//	uint8_t outputIdxSW[OUTER_SIZE];
-//	ap_uint<5> outputIdxHW[OUTER_SIZE];
-
-	bool isOuterCornerSW = 0;
-	ap_uint<1>  isOuterCornerHW = 0;
-
-	uint8_t size = OUTER_SIZE;
-
-	for (int i = 0; i < testTimes; i++)
-	{
-		ts[i]  = rand();
-	}
-	sort(ts, ts+testTimes);
-
-	for(int k = 0; k < testTimes; k++)
-	{
-		cout << "Test " << k << ":" << endl;
-
-		int err_cnt = 0;
-
-// 	    cout << "\nArray after sorting using "
-// 	         "default sort is : \n";
-// 	    for (int i = 0; i < eventCnt; ++i)
-// 	        cout << ts[i] << " ";
-
-			x = rand()%50 + 20;
-			y = rand()%50 + 20;
-//			idx = rand()%3;
-	//		x = 255;
-	//		y = 240;
-			cout << "x : " << x << endl;
-			cout << "y : " << y << endl;
-			cout << "ts : " << ts[k] << endl;
-
-		FastDetectorisOuterFeature(x, y, ts[k], pol, &isOuterCornerSW);
-		fastCornerOuterHW(y, x, ts[k], 1, &isOuterCornerHW);
-
-		cout << "isCornerSW is: " << isOuterCornerSW << endl;
-		cout << "isCornerHW is: " << isOuterCornerHW << endl;
-
-		if (isOuterCornerSW != isOuterCornerHW.to_bool())
-		{
-			err_cnt++;
-		}
-
-		if(err_cnt == 0)
-		{
-			cout << "Test " << k << " passed." << endl;
-		}
-		else
-		{
-			cout << "Test " << k << " failed!!!" << endl;
-		}
-		total_err_cnt += err_cnt;
-		cout << endl;
-	}
-
-//	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
+//	/******************* Test FastCheckInnerCornerSW module from random value**************************/
 ////	srand((unsigned)time(NULL));
 //	testTimes = 10000;
 //
@@ -660,6 +690,64 @@ int main ()
 //		total_err_cnt += err_cnt;
 //		cout << endl;
 //	}
+
+	/******************* Test testFromTsDataCheckOuterCornerSW module from random value**************************/
+//	srand((unsigned)time(NULL));
+	testTimes = 1000;
+
+	// The raw data for SW and HW are exactly the same, except the data type.
+	uint32_t testRawDataSW[OUTER_SIZE];
+	ap_uint<32> testRawDataHW[OUTER_SIZE];
+//	uint8_t outputIdxSW[OUTER_SIZE];
+//	ap_uint<5> outputIdxHW[OUTER_SIZE];
+
+	ap_uint<1> isCornerSW = 0, isCornerHW = 0;
+
+	uint8_t size = OUTER_SIZE;
+
+	for(int k = 0; k < testTimes; k++)
+	{
+		cout << "Test " << k << ":" << endl;
+
+		int err_cnt = 0;
+
+		for (int i = 0; i < size; i++)
+		{
+			testRawDataSW[i]  = rand();
+			testRawDataHW[i] = testRawDataSW[i];
+		}
+
+		// The following pattern is only used to test the boundary behavior.
+		// On normal test condition, uncomment them.
+// 		testRawDataSW[0] = 100000;
+// 		testRawDataSW[15] = 100000;
+// 		testRawDataSW[14] = 100000;
+// 		testRawDataHW[0] = 100000;
+// 		testRawDataHW[15] = 100000;
+// 		testRawDataHW[14] = 100000;
+
+		testFromTsDataCheckOuterCornerHW(testRawDataHW, size, &isCornerHW);
+		testFromTsDataCheckOuterCornerSW(testRawDataSW, size, &isCornerSW);
+
+		cout << "isCornerSW is: " << isCornerSW << endl;
+		cout << "isCornerHW is: " << isCornerHW << endl;
+
+		if (isCornerSW != isCornerHW)
+		{
+			err_cnt++;
+		}
+
+		if(err_cnt == 0)
+		{
+			cout << "Test " << k << " passed." << endl;
+		}
+		else
+		{
+			cout << "Test " << k << " failed!!!" << endl;
+		}
+		total_err_cnt += err_cnt;
+		cout << endl;
+	}
 
 //	/******************* Test testFromTsDataCheckInnerCornerSW module from random value**************************/
 ////	srand((unsigned)time(NULL));
