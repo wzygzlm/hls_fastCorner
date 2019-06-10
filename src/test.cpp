@@ -563,10 +563,10 @@ int main ()
 
 	/******************* Test FastCheckOuterCornerSW module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 5000;
+	testTimes = 10000;
 
 	// The raw data for SW and HW are exactly the same, except the data type.
-	uint32_t x, y;
+	uint8_t x, y;
 	uint32_t ts[testTimes];
 	bool pol;
 //	uint8_t outputIdxSW[OUTER_SIZE];
@@ -594,17 +594,17 @@ int main ()
 // 	    for (int i = 0; i < eventCnt; ++i)
 // 	        cout << ts[i] << " ";
 
-			x = rand()%100 + 10;
-			y = rand()%80 + 10;
+			x = rand()%220 + 10;
+			y = rand()%110 + 10;
 //			idx = rand()%3;
 	//		x = 255;
 	//		y = 240;
-			cout << "x : " << x << endl;
-			cout << "y : " << y << endl;
+			cout << "x : " << (int)x << endl;
+			cout << "y : " << (int)y << endl;
 			cout << "ts : " << ts[k] << endl;
 
 	    FastDetectorisOuterFeature(x, y, ts[k], pol, &isOuterCornerSW);
-		fastCornerOuterHW(y, x, ts[k], 1, &isOuterCornerHW);
+		fastCornerOuterHW(x, y, ts[k], 1, &isOuterCornerHW);
 
 		cout << "isCornerSW is: " << isOuterCornerSW << endl;
 		cout << "isCornerHW is: " << isOuterCornerHW << endl;
@@ -659,8 +659,8 @@ int main ()
 //// 	    for (int i = 0; i < eventCnt; ++i)
 //// 	        cout << ts[i] << " ";
 //
-//			x = rand()%50 + 20;
-//			y = rand()%50 + 20;
+//			x = rand()%220 + 10;
+//			y = rand()%110 + 10;
 ////			idx = rand()%3;
 //	//		x = 255;
 //	//		y = 240;
@@ -669,7 +669,7 @@ int main ()
 //			cout << "ts : " << ts[k] << endl;
 //
 //		FastDetectorisInnerFeature(x, y, ts[k], pol, &isInnerCornerSW);
-//		fastCornerInnerHW(y, x, ts[k], 0, &isInnerCornerHW);
+//		fastCornerInnerHW(x, y, ts[k], 0, &isInnerCornerHW);
 //
 //		cout << "isCornerSW is: " << isInnerCornerSW << endl;
 //		cout << "isCornerHW is: " << isInnerCornerHW << endl;
