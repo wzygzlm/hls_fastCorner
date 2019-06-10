@@ -37,6 +37,9 @@ static col_pix_t saeHW[1][DVS_HEIGHT/RESHAPE_FACTOR][DVS_WIDTH];
 const ap_int<128> innerTest =  ap_int<128>("3f2e1d0dfdeedfd0d1e2f30313223130", 16);
 const ap_int<160> outerTest = ap_int<160>("4f3e2d1c0cfceddecfc0c1d2e3f4041423324140", 16);
 
+static ap_uint<2> glStage = 0;
+static ap_uint<2> glStageBak = glStage;
+
 // Function Description: return the minimum value of an array.
 template<typename DATA_TYPE, int DATA_SIZE>
 DATA_TYPE min(DATA_TYPE inArr[DATA_SIZE], int8_t *index)
@@ -645,22 +648,25 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_u
 	}
 }
 
-void finalCornerCheck(ap_uint<1> isStageCorner, ap_uint<2> *stage, ap_uint<1> *isFinalCorner)
+ap_uint<5> initFlg = 0;
+void finalCornerCheck(ap_uint<1> isStageCorner, ap_uint<1> *isFinalCorner)
 {
-	if(*stage == 0)
+	if(glStage == 0)
 	{
-		*stage = isStageCorner ? 1 : 2;
+		glStage = isStageCorner ? 1 : 2;
 	}
-	else if(*stage == 1)
+	else if(glStage == 1)
 	{
 		*isFinalCorner = isStageCorner;
-		*stage = 0;
+		glStage = 0;
 	}
 	else
 	{
 		*isFinalCorner = 0;
-		*stage = 0;
+		glStage = 0;
 	}
+
+	glStageBak = glStage;
 }
 
 
@@ -808,7 +814,6 @@ void getXandY(const uint64_t * data, X_TYPE *x, Y_TYPE *y, ap_uint<TS_TYPE_BIT_W
 	bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
 	*ts = tmp >> 32;
 }
-
 
 template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
 void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
@@ -1624,7 +1629,20 @@ void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uin
 	checkOuterIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
-void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  *stage, ap_uint<1> *isCorner)
+void initFunc(ap_uint<2> *stage)
+{
+	if (initFlg <= 20)
+	{
+		initFlg += 1;
+		*stage = 0;
+	}
+	else
+	{
+		*stage = glStageBak;
+	}
+}
+
+void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> *isCorner)
 {
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
@@ -1635,7 +1653,11 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
     ap_uint<5> idxData[OUTER_SIZE];
     ap_uint<1> isStageCorner;
 
-    rwSAE<2>(x, y, ts, *stage, outer, &size);
+    ap_uint<2> stage;
+#pragma HLS STREAM variable=stage depth=2 dim=1
+
+//    initFunc(&stage);
+    rwSAE<2>(x, y, ts, glStageBak, outer, &size);
 
 //	std::cout << "Idx stage " << *stage << " Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
@@ -1648,7 +1670,7 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
     convertInterface<4>(outer, size, inStream);
 	sortedIdxStream<4>(inStream, size, idxData);
 	checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
-	finalCornerCheck(isStageCorner, stage, isCorner);
+	finalCornerCheck(isStageCorner, isCorner);
 }
 
 void outputResult(ap_uint<1> isCorner,  hls::stream<apUint17_t> &packetEventDataStream, int32_t *eventSlice)

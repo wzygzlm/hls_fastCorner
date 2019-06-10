@@ -634,8 +634,8 @@ int main ()
 		}
 
 		FastDetectorisFeature(x, y, ts[k], pol, &isOuterCornerSW);
-		fastCornerHW(x, y, ts[k], &stage, &isOuterCornerHW);
-		fastCornerHW(x, y, ts[k], &stage, &isOuterCornerHW);
+		fastCornerHW(x, y, ts[k], &isOuterCornerHW);
+		fastCornerHW(x, y, ts[k], &isOuterCornerHW);
 
 		cout << "isCornerSW is: " << isOuterCornerSW << endl;
 		cout << "isCornerHW is: " << isOuterCornerHW << endl;
