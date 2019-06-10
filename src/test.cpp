@@ -310,7 +310,7 @@ void FastDetectorisInnerFeature(int pix_x, int pix_y, int timesmp, bool polarity
 
   *found_streak = false;
 
-  std::cout << "Idx Data SW is: " << std::endl;
+  std::cout << "Idx Inner Data SW is: " << std::endl;
   for (int i=0; i<16; i++)
   {
 		cout << sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]] << "\t";
@@ -355,8 +355,7 @@ void FastDetectorisInnerFeature(int pix_x, int pix_y, int timesmp, bool polarity
       if (!did_break)
       {
         *found_streak = true;
-		*found_streak = true;
-		cout << "Outer Corner position is : " << i << " and streak size is: " << streak_size << endl;
+		cout << "Inner Corner position is : " << i << " and streak size is: " << streak_size << endl;
         break;
       }
     }
@@ -463,11 +462,14 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
 
 
   std::cout << "Idx Inner Data SW is: " << std::endl;
+  for (int i=0; i<16; i++)
+  {
+		cout << sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]] << "\t";
+  }
+	std::cout << std::endl;
 
   isFeatureOutterLoop:for (int i=0; i<16; i++)
   {
-		cout << sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]] << "\t";
-
     FastDetectorisFeature_label2:for (int streak_size = 3; streak_size<=6; streak_size++)
     {
       // check that streak event is larger than neighbor
@@ -503,28 +505,31 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
       if (!did_break)
       {
         *found_streak = true;
+		cout << "Inner Corner position is : " << i << " and streak size is: " << streak_size << endl;
         break;
       }
     }
 
 	  if (*found_streak)
 	  {
-		  cout << endl <<  "Found a stage corner." << endl;
 		  break;
 	  }
   }
-	std::cout << std::endl;
 
   if (*found_streak)
   {
     *found_streak = false;
 
-    std::cout << "Idx Outer Data SW is: " << std::endl;
+
+	std::cout << "Idx Outer Data SW is: " << std::endl;
+	for (int i=0; i<20; i++)
+	{
+	cout << sae_[pol][pix_x+circle4_[i][0]][pix_y+circle4_[i][1]] << "\t";
+	}
+	std::cout << std::endl;
 
     FastDetectorisFeature_label6:for (int i=0; i<20; i++)
     {
-		cout << sae_[pol][pix_x+circle4_[i][0]][pix_y+circle4_[i][1]] << "\t";
-
       FastDetectorisFeature_label5:for (int streak_size = 4; streak_size<=8; streak_size++)
       {
         // check that first event is larger than neighbor
@@ -557,6 +562,7 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
         if (!did_break)
         {
           *found_streak = true;
+		  cout << "Outer Corner position is : " << i << " and streak size is: " << streak_size << endl;
           break;
         }
       }
@@ -565,7 +571,6 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
         break;
       }
     }
-	std::cout << std::endl;
 
   }
 
@@ -580,72 +585,77 @@ int main ()
     int total_err_cnt = 0;
 	int retval=0;
 
-//	/******************* Test FastCheckOuterCornerSW module from random value**************************/
-////	srand((unsigned)time(NULL));
-//	testTimes = 10000;
-//
-//	// The raw data for SW and HW are exactly the same, except the data type.
-//	uint8_t x, y;
-//	uint32_t ts[testTimes];
-//	bool pol;
-//	ap_uint<2> stage = 0;
-////	uint8_t outputIdxSW[OUTER_SIZE];
-////	ap_uint<5> outputIdxHW[OUTER_SIZE];
-//
-//	bool isOuterCornerSW = 0;
-//	ap_uint<1>  isOuterCornerHW = 0;
-//
-//	uint8_t size = OUTER_SIZE;
-//
-//	for (int i = 0; i < testTimes; i++)
-//	{
-//		ts[i]  = rand();
-//	}
-//	sort(ts, ts+testTimes);
-//
-//	for(int k = 0; k < testTimes; k++)
-//	{
-//		cout << "Test " << k << ":" << endl;
-//
-//		int err_cnt = 0;
-//
-//// 	    cout << "\nArray after sorting using "
-//// 	         "default sort is : \n";
-//// 	    for (int i = 0; i < eventCnt; ++i)
-//// 	        cout << ts[i] << " ";
-//
-//			x = rand()%220 + 10;
-//			y = rand()%110 + 10;
-////			idx = rand()%3;
-//	//		x = 255;
-//	//		y = 240;
-//			cout << "x : " << (int)x << endl;
-//			cout << "y : " << (int)y << endl;
-//			cout << "ts : " << ts[k] << endl;
-//
-//		FastDetectorisFeature(x, y, ts[k], pol, &isOuterCornerSW);
-//		fastCornerHW(x, y, ts[k], &stage, &isOuterCornerHW);
-//		fastCornerHW(x, y, ts[k], &stage, &isOuterCornerHW);
-//
-//		cout << "isCornerSW is: " << isOuterCornerSW << endl;
-//		cout << "isCornerHW is: " << isOuterCornerHW << endl;
-//
-//		if (isOuterCornerSW != isOuterCornerHW.to_bool())
-//		{
-//			err_cnt++;
-//		}
-//
-//		if(err_cnt == 0)
-//		{
-//			cout << "Test " << k << " passed." << endl;
-//		}
-//		else
-//		{
-//			cout << "Test " << k << " failed!!!" << endl;
-//		}
-//		total_err_cnt += err_cnt;
-//		cout << endl;
-//	}
+	/******************* Test FastCheckOuterCornerSW module from random value**************************/
+//	srand((unsigned)time(NULL));
+	testTimes = 10000;
+
+	// The raw data for SW and HW are exactly the same, except the data type.
+	uint8_t x, y;
+	uint32_t ts[testTimes];
+	bool pol;
+	ap_uint<2> stage = 0;
+//	uint8_t outputIdxSW[OUTER_SIZE];
+//	ap_uint<5> outputIdxHW[OUTER_SIZE];
+
+	bool isOuterCornerSW = 0;
+	ap_uint<1>  isOuterCornerHW = 0;
+
+	uint8_t size = OUTER_SIZE;
+
+	for (int i = 0; i < testTimes; i++)
+	{
+		ts[i]  = rand();
+	}
+	sort(ts, ts+testTimes);
+
+	for(int k = 0; k < testTimes; k++)
+	{
+		cout << "Test " << k << ":" << endl;
+
+		int err_cnt = 0;
+
+// 	    cout << "\nArray after sorting using "
+// 	         "default sort is : \n";
+// 	    for (int i = 0; i < eventCnt; ++i)
+// 	        cout << ts[i] << " ";
+
+			x = rand()%220 + 10;
+			y = rand()%110 + 10;
+//			idx = rand()%3;
+	//		x = 255;
+	//		y = 240;
+			cout << "x : " << (int)x << endl;
+			cout << "y : " << (int)y << endl;
+			cout << "ts : " << ts[k] << endl;
+
+		if (k == 6006)
+		{
+			int tmp = 0;
+		}
+
+		FastDetectorisFeature(x, y, ts[k], pol, &isOuterCornerSW);
+		fastCornerHW(x, y, ts[k], &stage, &isOuterCornerHW);
+		fastCornerHW(x, y, ts[k], &stage, &isOuterCornerHW);
+
+		cout << "isCornerSW is: " << isOuterCornerSW << endl;
+		cout << "isCornerHW is: " << isOuterCornerHW << endl;
+
+		if (isOuterCornerSW != isOuterCornerHW.to_bool())
+		{
+			err_cnt++;
+		}
+
+		if(err_cnt == 0)
+		{
+			cout << "Test " << k << " passed." << endl;
+		}
+		else
+		{
+			cout << "Test " << k << " failed!!!" << endl;
+		}
+		total_err_cnt += err_cnt;
+		cout << endl;
+	}
 
 //	/******************* Test FastCheckOuterCornerSW module from random value**************************/
 ////	srand((unsigned)time(NULL));
@@ -712,70 +722,70 @@ int main ()
 //		cout << endl;
 //	}
 
-	/******************* Test FastCheckInnerCornerSW module from random value**************************/
-//	srand((unsigned)time(NULL));
-	testTimes = 10000;
-
-	// The raw data for SW and HW are exactly the same, except the data type.
-	uint32_t x, y;
-	uint32_t ts[testTimes];
-	bool pol;
-//	uint8_t outputIdxSW[OUTER_SIZE];
-//	ap_uint<5> outputIdxHW[OUTER_SIZE];
-
-	bool isInnerCornerSW = 0;
-	ap_uint<1>  isInnerCornerHW = 0;
-
-	uint8_t size = INNER_SIZE;
-
-	for (int i = 0; i < testTimes; i++)
-	{
-		ts[i]  = rand();
-	}
-	sort(ts, ts+testTimes);
-
-	for(int k = 0; k < testTimes; k++)
-	{
-		cout << "Test " << k << ":" << endl;
-
-		int err_cnt = 0;
-
-// 	    cout << "\nArray after sorting using "
-// 	         "default sort is : \n";
-// 	    for (int i = 0; i < eventCnt; ++i)
-// 	        cout << ts[i] << " ";
-
-			x = rand()%220 + 10;
-			y = rand()%110 + 10;
-//			idx = rand()%3;
-	//		x = 255;
-	//		y = 240;
-			cout << "x : " << x << endl;
-			cout << "y : " << y << endl;
-			cout << "ts : " << ts[k] << endl;
-
-		FastDetectorisInnerFeature(x, y, ts[k], pol, &isInnerCornerSW);
-		fastCornerInnerHW(x, y, ts[k], 0, &isInnerCornerHW);
-
-		cout << "isCornerSW is: " << isInnerCornerSW << endl;
-		cout << "isCornerHW is: " << isInnerCornerHW << endl;
-
-		if (isInnerCornerSW != isInnerCornerHW.to_bool())
-		{
-			err_cnt++;
-		}
-
-		if(err_cnt == 0)
-		{
-			cout << "Test " << k << " passed." << endl;
-		}
-		else
-		{
-			cout << "Test " << k << " failed!!!" << endl;
-		}
-		total_err_cnt += err_cnt;
-		cout << endl;
-	}
+//	/******************* Test FastCheckInnerCornerSW module from random value**************************/
+////	srand((unsigned)time(NULL));
+//	testTimes = 10000;
+//
+//	// The raw data for SW and HW are exactly the same, except the data type.
+//	uint32_t x, y;
+//	uint32_t ts[testTimes];
+//	bool pol;
+////	uint8_t outputIdxSW[OUTER_SIZE];
+////	ap_uint<5> outputIdxHW[OUTER_SIZE];
+//
+//	bool isInnerCornerSW = 0;
+//	ap_uint<1>  isInnerCornerHW = 0;
+//
+//	uint8_t size = INNER_SIZE;
+//
+//	for (int i = 0; i < testTimes; i++)
+//	{
+//		ts[i]  = rand();
+//	}
+//	sort(ts, ts+testTimes);
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+//// 	    cout << "\nArray after sorting using "
+//// 	         "default sort is : \n";
+//// 	    for (int i = 0; i < eventCnt; ++i)
+//// 	        cout << ts[i] << " ";
+//
+//			x = rand()%220 + 10;
+//			y = rand()%110 + 10;
+////			idx = rand()%3;
+//	//		x = 255;
+//	//		y = 240;
+//			cout << "x : " << x << endl;
+//			cout << "y : " << y << endl;
+//			cout << "ts : " << ts[k] << endl;
+//
+//		FastDetectorisInnerFeature(x, y, ts[k], pol, &isInnerCornerSW);
+//		fastCornerInnerHW(x, y, ts[k], 0, &isInnerCornerHW);
+//
+//		cout << "isCornerSW is: " << isInnerCornerSW << endl;
+//		cout << "isCornerHW is: " << isInnerCornerHW << endl;
+//
+//		if (isInnerCornerSW != isInnerCornerHW.to_bool())
+//		{
+//			err_cnt++;
+//		}
+//
+//		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+//		else
+//		{
+//			cout << "Test " << k << " failed!!!" << endl;
+//		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
 //	/******************* Test testFromTsDataCheckOuterCornerSW module from random value**************************/
 ////	srand((unsigned)time(NULL));

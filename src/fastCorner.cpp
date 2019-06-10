@@ -442,7 +442,7 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 //				if (isCornerTemp == 1)
 //				{
 //					*isCorner = isCornerTemp ;
-//					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
+//					std::cout << "HW: Position is :" << (int)(i * NPC + k) << " and streak size is: " << (int)(n + 3) << std::endl;
 //					return;
 //				}
 			}
@@ -541,12 +541,12 @@ void checkInnerIdxV2(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap
 				}
 				isCornerTemp |= tempCond[n][k];
 
-//				if (isCornerTemp == 1)
-//				{
-//					*isCorner = isCornerTemp ;
-//					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
-//					return;
-//				}
+				if (isCornerTemp == 1)
+				{
+					*isCorner = isCornerTemp ;
+					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
+					return;
+				}
 			}
 		}
 		*isCorner = isCornerTemp ;
@@ -658,6 +658,7 @@ void finalCornerCheck(ap_uint<1> isStageCorner, ap_uint<2> *stage, ap_uint<1> *i
 	}
 	else
 	{
+		*isFinalCorner = 0;
 		*stage = 0;
 	}
 }
@@ -1636,7 +1637,7 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
 
     rwSAE<2>(x, y, ts, *stage, outer, &size);
 
-//	std::cout << "Idx Data HW is: " << std::endl;
+//	std::cout << "Idx stage " << *stage << " Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
 //	{
 //		std::cout << (int)outer[i]<< "\t";
