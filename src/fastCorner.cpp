@@ -1705,13 +1705,28 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 	X_TYPE x;
 	Y_TYPE y;
 	ap_uint<TS_TYPE_BIT_WIDTH> ts;
+    ap_uint<1> isStageCorner;
+
 	ap_uint<1> isCorner;
 
-	getXandY(dataStream, &x, &y, &ts, pktEventDataStream);
-    rwSAE<2>(x, y, ts, 0, outer, &size);
+    ap_uint<2> stage;
+#pragma HLS STREAM variable=stage depth=2 dim=1
+
+    getXandY(dataStream, &x, &y, &ts, pktEventDataStream);
+//    initFunc(&stage);
+    rwSAE<2>(x, y, ts, glStageBak, outer, &size);
+
+//	std::cout << "Idx stage " << *stage << " Data HW is: " << std::endl;
+//	for (int i = 0; i < size; i++)
+//	{
+//		std::cout << (int)outer[i]<< "\t";
+//	}
+//	std::cout << std::endl;
+
 //    sortedIdxData<2>(outer, size, idxData);
     convertInterface<4>(outer, size, inStream);
 	sortedIdxStream<4>(inStream, size, idxData);
-	checkInnerIdx<4>(idxData, size, &isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
+	finalCornerCheck(isStageCorner, &isCorner);
 	outputResult(isCorner, pktEventDataStream, eventSlice++);
 }

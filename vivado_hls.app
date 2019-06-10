@@ -1,4 +1,4 @@
-<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="fastCornerHW">
+<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="parseEventsHW">
     <files>
         <file name="../src/test.cpp" sc="0" tb="1" cflags=" "/>
         <file name="hls_fastCorner/src/fastCorner.cpp" sc="0" tb="false" cflags=""/>
@@ -7,7 +7,7 @@
     <includePaths/>
     <libraryPaths/>
     <Simulation>
-        <SimFlow name="csim" csimMode="2" lastCsimMode="2"/>
+        <SimFlow name="csim" csimMode="2" lastCsimMode="2" compiler="true"/>
     </Simulation>
     <solutions xmlns="">
         <solution name="solution1" status="active"/>
