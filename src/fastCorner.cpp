@@ -645,6 +645,24 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_u
 	}
 }
 
+void finalCornerCheck(ap_uint<1> isStageCorner, ap_uint<2> *stage, ap_uint<1> *isFinalCorner)
+{
+	if(*stage == 0)
+	{
+		*stage = isStageCorner ? 1 : 2;
+	}
+	else if(*stage == 1)
+	{
+		*isFinalCorner = isStageCorner;
+		*stage = 0;
+	}
+	else
+	{
+		*stage = 0;
+	}
+}
+
+
 void testCheckInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
 //	checkInnerIdx<5>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
@@ -653,28 +671,29 @@ void testCheckInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, 
 
 void testCheckOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
-	checkOuterIdx<5>(idxData, size, isCorner);    // NPC = 7 could make II = 1 but we might not need so fast.
+	checkOuterIdx<4>(idxData, size, isCorner);    // NPC = 7 could make II = 1 but we might not need so fast.
 }
 
+template<int NPC>
 void checkIdx(ap_uint<5> inData[OUTER_SIZE], ap_uint<5> size, ap_uint<1> *isCorner)
 {
 	if(size == INNER_SIZE)
 	{
-		ap_uint<5> idxData[INNER_SIZE + 6 - 1];
-		for (uint8_t i = INNER_SIZE; i < INNER_SIZE + 6 - 1; i++)
-		{
-			idxData[i] = inData[i - INNER_SIZE];
-		}
-		checkInnerIdx<5>(idxData, size, isCorner);
+//		ap_uint<5> idxData[INNER_SIZE + 6 - 1];
+//		for (uint8_t i = INNER_SIZE; i < INNER_SIZE + 6 - 1; i++)
+//		{
+//			idxData[i] = inData[i - INNER_SIZE];
+//		}
+		checkInnerIdx<NPC>(inData, size, isCorner);
 	}
-	else if(size == 20)
+	else if(size == OUTER_SIZE)
 	{
-		ap_uint<5> idxData[OUTER_SIZE + 8 - 1];
-		for (uint8_t i = OUTER_SIZE; i < OUTER_SIZE + 8 - 1; i++)
-		{
-			idxData[i] = inData[i - OUTER_SIZE];
-		}
-		checkOuterIdx<5>(idxData, size, isCorner);
+//		ap_uint<5> idxData[OUTER_SIZE + 8 - 1];
+//		for (uint8_t i = OUTER_SIZE; i < OUTER_SIZE + 8 - 1; i++)
+//		{
+//			idxData[i] = inData[i - OUTER_SIZE];
+//		}
+		checkOuterIdx<NPC>(inData, size, isCorner);
 	}
 	else
 	{
@@ -845,7 +864,105 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 	}
 	else if(stage == 1)
 	{
-		readOuterCircleFromSAE:for(ap_uint<8> i = 0; i < OUTER_SIZE + 1; i = i + READ_NPC)
+		readOuterCircleFromSAE:for(ap_uint<8> i = 0; i < OUTER_SIZE; i = i + READ_NPC)
+		{
+	#pragma HLS DEPENDENCE variable=saeHW inter false
+	#pragma HLS PIPELINE rewind
+//			if (i >= OUTER_SIZE)
+//			{
+//				updateSAE(x, y, ts);
+//			}
+//			else
+//			{
+				ap_uint<8 * READ_NPC> xOuterTest;
+				X_TYPE xOuter[READ_NPC];
+				Y_TYPE yOuter[READ_NPC], yOuterNewIdx[READ_NPC];
+				rwSAEReadOuterOffsetBitsLoop:
+				for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+				{
+		#pragma HLS UNROLL
+					ap_uint<8> tmpIndex; // In  order to save the resource, we use bit operation to get the index of the inner/outer offset.
+					tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+					tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+					xOuterTest[j] = outerTest[tmpIndex];
+				}
+
+				readOuterNPCLoop:
+				for (ap_uint<8> k = 0; k < READ_NPC; k++)
+				{
+					xOuter[k] = x + ap_int<4>(xOuterTest(8 * k + 3, 8  * k));       // Change back from unsigned to signed.
+					yOuter[k] = y + ap_int<4>(xOuterTest(8 * k + 7, 8 * k + 4));    // Change back from unsigned to signed.
+					yOuterNewIdx[k] = yOuter[k]%RESHAPE_FACTOR;
+
+					outputData[i + k] = readOneDataFromCol(saeHW[0][yOuter[k]/RESHAPE_FACTOR][xOuter[k]], yOuterNewIdx[k]);
+				}
+//			}
+		}
+		*size = OUTER_SIZE;
+	}
+	else
+	{
+		*size = 0;
+	}
+}
+
+// This function is ony for outer corner test
+template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
+void rwSAEOuterTest(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
+{
+//#pragma HLS RESOURCE variable=saeHW core=RAM_T2P_BRAM
+#pragma HLS INLINE off
+	if(stage == 0)
+	{
+//		updateSAE(x, y, ts);
+
+		readInnerCircleFromSAE:for(ap_uint<8> i = 0; i < INNER_SIZE + 1; i = i + READ_NPC)
+		{
+	#pragma HLS DEPENDENCE variable=saeHW inter false
+	#pragma HLS PIPELINE rewind
+			if (i >= INNER_SIZE)
+			{
+				updateSAE(x, y, ts);
+			}
+			else
+			{
+	            ap_uint<8 * READ_NPC> xInnerTest, xOuterTest;
+	            X_TYPE xInner[READ_NPC];
+	            Y_TYPE yInner[READ_NPC], yInnerNewIdx[READ_NPC];
+	        	rwSAEReadOffsetBitsLoop:
+	            for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+	            {
+	#pragma HLS UNROLL
+	            	ap_uint<8> tmpIndex;   // In  order to save the resource, we use bit operation to get the index of the inner/outer offset.
+	            	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+	            	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+	            	xInnerTest[j] = innerTest[tmpIndex];
+	            	xOuterTest[j] = outerTest[tmpIndex];
+	            }
+
+	            readNPCLoop:
+	            for (ap_uint<8> k = 0; k < READ_NPC; k++)
+	            {
+	                xInner[k] = x + ap_int<4>(xInnerTest(8 * k + 3, 8  * k));  // Change back from unsigned to signed.
+	                yInner[k] = y + ap_int<4>(xInnerTest(8 * k + 7, 8 * k + 4));          // Change back from unsigned to signed.
+	                yInnerNewIdx[k] = yInner[k]%RESHAPE_FACTOR;
+
+	                outputData[i + k] = readOneDataFromCol(saeHW[0][yInner[k]/RESHAPE_FACTOR][xInner[k]], yInnerNewIdx[k]);
+	            }
+
+	//			X_TYPE xOuter = x + xOuterTest(3, 0);
+	//			Y_TYPE yOuter = y + xOuterTest(7, 4);
+	//			Y_TYPE yOuterNewIdx = yOuter%RESHAPE_FACTOR;
+	//
+	//			outerCircle[i] = readOneDataFromCol(saeHW[0][yOuter/RESHAPE_FACTOR][xOuter], yOuterNewIdx);
+			}
+		}
+
+		*size = INNER_SIZE;
+	}
+	else if(stage == 1)
+	{
+		readOuterCircleFromSAE:for(ap_uint<8> i = 0; i < OUTER_SIZE + 2; i = i + READ_NPC)
 		{
 	#pragma HLS DEPENDENCE variable=saeHW inter false
 	#pragma HLS PIPELINE rewind
@@ -886,6 +1003,8 @@ void rwSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage,
 		*size = 0;
 	}
 }
+
+
 
 
 template<int READ_NPC>
@@ -1489,7 +1608,7 @@ void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uin
     ap_uint<5> size;
     ap_uint<5> idxData[OUTER_SIZE];
 
-    rwSAE<2>(x, y, ts, stage, outer, &size);
+    rwSAEOuterTest<2>(x, y, ts, stage, outer, &size);
 
 //	std::cout << "Idx Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
@@ -1504,7 +1623,7 @@ void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uin
 	checkOuterIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
-void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner)
+void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  *stage, ap_uint<1> *isCorner)
 {
 #pragma HLS DATAFLOW
     ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
@@ -1513,8 +1632,9 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
 #pragma HLS RESOURCE variable=inStream core=FIFO_SRL
     ap_uint<5> size;
     ap_uint<5> idxData[OUTER_SIZE];
+    ap_uint<1> isStageCorner;
 
-    rwSAE<2>(x, y, ts, stage, outer, &size);
+    rwSAE<2>(x, y, ts, *stage, outer, &size);
 
 //	std::cout << "Idx Data HW is: " << std::endl;
 //	for (int i = 0; i < size; i++)
@@ -1526,7 +1646,8 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2> 
 //    sortedIdxData<2>(outer, size, idxData);
     convertInterface<4>(outer, size, inStream);
 	sortedIdxStream<4>(inStream, size, idxData);
-	checkInnerIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
+	checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
+	finalCornerCheck(isStageCorner, stage, isCorner);
 }
 
 void outputResult(ap_uint<1> isCorner,  hls::stream<apUint17_t> &packetEventDataStream, int32_t *eventSlice)
