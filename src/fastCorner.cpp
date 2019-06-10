@@ -6,6 +6,19 @@
 #include "assert.h"
 
 // SAE (Surface of Active Event)
+// Some important things about the hardware memory overflow.
+// Here for example RESHAPE_FACTOR = 16 is the power of 2.
+// Then in this memory saeHW, the address will be 11bits. How can we know that it is 11bits?
+// If we represent it as saeHW[0][y][x].
+// The address is calculated from y/RESHAPE_FACTOR * (256 - 16) + x.
+// y >> 4 will have 3 bits and x have 8 bits. The maximum of y is assumed 128.
+// So the real capacity of the memory are 128/16 * 240 = 1920 words.
+// Howvere, we have 11bits memory, so it can represent a memory capacity of 2^11 = 2048 words.
+// That means, if we try to read words range from 1920 to 2048, it will return XXX;
+// But if we try to read words range which is bigger than 2048, it will go back to 2048.
+// For example, if y = 128, x = 127, then 128/16 * 240 +  127 = 2047, it will return XXX
+// But if y = 128, x = 128, then 128/16 * 128 + 128 = 2048, it will return of value of the 0th word.
+// It has observed from the simulation.
 static col_pix_t saeHW[1][DVS_HEIGHT/RESHAPE_FACTOR][DVS_WIDTH];
 
 //const int innerCircleOffset[INNER_SIZE][2] = {{0, 3}, {1, 3}, {2, 2}, {3, 1},
