@@ -560,7 +560,7 @@ void checkInnerIdxV2(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap
 template<int NPC>
 void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
-#pragma HLS INLINE
+#pragma HLS INLINE off
 #pragma HLS ARRAY_PARTITION variable=idxData cyclic factor=NPC dim=0
 
 	ap_uint<1> isCornerTemp = 0;
