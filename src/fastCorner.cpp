@@ -40,6 +40,8 @@ const ap_int<160> outerTest = ap_int<160>("4f3e2d1c0cfceddecfc0c1d2e3f4041423324
 static ap_uint<2> glStage = 0;
 static ap_uint<2> glStageBak = glStage;
 
+uint32_t glInitCounter = 0, glFunctionCounter = 0;
+
 // Function Description: return the minimum value of an array.
 template<typename DATA_TYPE, int DATA_SIZE>
 DATA_TYPE min(DATA_TYPE inArr[DATA_SIZE], int8_t *index)
@@ -668,7 +670,6 @@ void finalCornerCheck(ap_uint<1> isStageCorner, ap_uint<1> *isFinalCorner)
 	glStageBak = glStage;
 }
 
-uint32_t glEventCounter = 0, glFunctionCounter = 0;
 void finalCornerCheckStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> >  &stageStream, hls::stream< ap_uint<1> > &isFinalCornerStream)
 {
 #pragma HLS INLINE off
@@ -688,12 +689,10 @@ void finalCornerCheckStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> > 
 	}
 	else if(glStage == 1)
 	{
-		glEventCounter++;
 		stageStream << 0;
 	}
 	else
 	{
-		glEventCounter++;
 		stageStream << 0;
 	}
 }
@@ -1783,10 +1782,15 @@ void wrapInit(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, hls::stream< ap
 #pragma HLS INLINE off
 	ap_uint<2> stageIn = 0;
 	ap_uint<1> isStageCorner = 0;
-	if(!stageInStream.empty())
+	if(glInitCounter == 0)
 	{
-		stageIn = stageInStream.read();
+		stageIn = 0;
+        glInitCounter++;
 	}
+    else
+    {
+        stageIn = stageInStream.read();
+    }
 	glStage = stageIn;
 
 	xStream << x;
