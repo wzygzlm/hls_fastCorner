@@ -675,7 +675,7 @@ int main ()
 
 	/******************* Test FastCheckOuterCornerSW module from random value**************************/
 //	srand((unsigned)time(NULL));
-	testTimes = 5000;
+	testTimes = 15000;
 
 	// The raw data for SW and HW are exactly the same, except the data type.
 	uint8_t x, y;

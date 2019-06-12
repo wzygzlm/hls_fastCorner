@@ -40,7 +40,7 @@ const ap_int<160> outerTest = ap_int<160>("4f3e2d1c0cfceddecfc0c1d2e3f4041423324
 static ap_uint<2> glStage = 0;
 static ap_uint<2> glStageBak = glStage;
 
-uint32_t glInitCounter = 0, glFunctionCounter = 0;
+uint32_t glInitCounter = 0, glFeedbackCounter = 0;
 
 // Function Description: return the minimum value of an array.
 template<typename DATA_TYPE, int DATA_SIZE>
@@ -674,7 +674,6 @@ void finalCornerCheckStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> > 
 {
 #pragma HLS INLINE off
 
-	glFunctionCounter++;
 	isFinalCornerStream << isStageCorner;
 	if(glStage == 0)
 	{
@@ -1782,16 +1781,21 @@ void wrapInit(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, hls::stream< ap
 #pragma HLS INLINE off
 	ap_uint<2> stageIn = 0;
 	ap_uint<1> isStageCorner = 0;
-	if(glInitCounter == 0)
+	// Every event will invoke this module two times, at the first time, we made it always zero, and the second time read from the stream.
+	if(glInitCounter%2 == 0)
 	{
 		stageIn = 0;
-        glInitCounter++;
 	}
     else
     {
         stageIn = stageInStream.read();
     }
 	glStage = stageIn;
+
+	// This counter is used to syncronize this module and the feedback module.
+	// Make them have the common adder source.
+	glFeedbackCounter = glInitCounter;
+    glInitCounter++;
 
 	xStream << x;
 	yStream << y;
@@ -1878,7 +1882,11 @@ void feedbackStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> >  &stageS
 		outputStage =  0;
 	}
 
-	stageStream << outputStage;
+	// Only write the stream at the first part of the event processing.
+	if(glFeedbackCounter%2 == 0)
+	{
+		stageStream << outputStage;
+	}
 }
 
 
@@ -1900,6 +1908,8 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
 	hls::stream< ap_uint<2> >  stageInStream("stageInStream");
 	hls::stream< ap_uint<2> >  stageOutStream("stageOutStream");
+
+	glInitCounter = 0;
 
 	for (int loop = 0; loop < 2; loop++)
 	{
