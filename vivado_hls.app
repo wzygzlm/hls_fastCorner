@@ -1,4 +1,4 @@
-<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="fastCornerHW">
+<project xmlns="com.autoesl.autopilot.project" name="hls_fastCorner" top="parseEventsHW">
     <includePaths/>
     <libraryPaths/>
     <Simulation>

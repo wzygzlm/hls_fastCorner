@@ -6,7 +6,7 @@
 #include "hls_stream.h"
 #include "ap_axi_sdata.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 #define DVS_WIDTH  240
 

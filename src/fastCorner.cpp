@@ -2025,7 +2025,7 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 
 	ap_uint<1> isCorner;
 
-	glInitCounter = 0;
+//	glInitCounter = 0;
 
 	uint16_t eventIterSize = eventsArraySize;
 
