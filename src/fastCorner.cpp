@@ -41,7 +41,7 @@ const ap_int<160> outerTest = ap_int<160>("4f3e2d1c0cfceddecfc0c1d2e3f4041423324
 static ap_uint<2> glStage = 0;
 static ap_uint<2> glStageBak = glStage;
 
-uint32_t glInitCounter = 0, glFeedbackCounter = 0;
+static uint32_t glInitCounter = 0, glFeedbackCounter = 0;
 
 // Function Description: return the minimum value of an array.
 template<typename DATA_TYPE, int DATA_SIZE>
@@ -851,7 +851,7 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	X_TYPE xWr = ((tmp) >> POLARITY_X_ADDR_SHIFT) & POLARITY_X_ADDR_MASK;
 	Y_TYPE yWr = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
 	bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
-	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 31;
+	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 32;
 
 	xStream << xWr;
 	yStream << yWr;
@@ -864,8 +864,31 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	packetEventDataStream << apUint17_t(xWr.to_int() + (yWr.to_int() << 8) + (pol << 16));
 }
 
+void initStageStream(hls::stream< ap_uint<2> >  &stageInStream, hls::stream< ap_uint<2> >  &stageOutStream)
+{
+#pragma HLS INLINE off
+	ap_uint<2> stageIn = 0;
+	ap_uint<1> isStageCorner = 0;
+	// Every event will invoke this module two times, at the first time, we made it always zero, and the second time read from the stream.
+	if(glInitCounter%2 == 0)
+	{
+		stageIn = 0;
+	}
+    else
+    {
+        stageIn = stageInStream.read();
+    }
+	glStage = stageIn;
 
-void initStageStream(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, hls::stream< ap_uint<2> >  &stageInStream,
+	// This counter is used to syncronize this module and the feedback module.
+	// Make them have the common adder source.
+	glFeedbackCounter = glInitCounter;
+    glInitCounter++;
+
+	stageOutStream << stageIn;
+}
+
+void initStageStreamAndXandY(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, hls::stream< ap_uint<2> >  &stageInStream,
 		hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream< ap_uint<2> >  &stageOutStream)
 {
 #pragma HLS INLINE off
@@ -1918,12 +1941,20 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 	hls::stream< ap_uint<2> >  stageOutStream("stageOutStream");
 	hls::stream< ap_uint<1> > isFinalCornerStream("isFinalCornerStream");
 
-	glInitCounter = 0;
+//	glInitCounter = 0;
 
-	for (int loop = 0; loop < 2; loop++)
+	GetData: for (int loop = 0; loop < 2; loop++)
+	{
+		xStream << x;
+		yStream << y;
+		tsStream << ts;
+	}
+
+	Processing: for (int loop = 0; loop < 2; loop++)
 	{
 		#pragma HLS DATAFLOW
-			initStageStream(x, y, ts, stageInStream, xStream, yStream, tsStream, stageOutStream);
+		    initStageStream(stageInStream, stageOutStream);
+//			initStageStreamAndXandY(x, y, ts, stageInStream, xStream, yStream, tsStream, stageOutStream);
 			rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
 
 //			std::cout << "Idx stage " << stage[loop] << " Data HW is: " << std::endl;
@@ -1938,8 +1969,13 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 			sortedIdxStream<2>(inStream, size, idxData);
 			checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
 			feedbackStream(isStageCorner, stageInStream, isFinalCornerStream);
+//			*isCorner = isStageCorner;
 	}
-	isFinalCornerStream >> *isCorner;
+
+	Output:
+	{
+		isFinalCornerStream >> *isCorner;
+	}
 }
 
 void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<apUint17_t> &packetEventDataStream, int32_t *eventSlice)
@@ -1991,16 +2027,23 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 
 	glInitCounter = 0;
 
-	uint16_t  eventIterSize = eventsArraySize;
+	uint16_t eventIterSize = eventsArraySize;
 
-	for(int i = 0; i < eventIterSize * LOOPS_PER_EVENT; i++)
+	GetData: for(int i = 0; i < eventIterSize; i++)
+	{
+#pragma HLS PIPELINE
+#pragma HLS LOOP_TRIPCOUNT min=1 max=10000
+		getXandY(dataStream++, xStream, yStream, tsStream, pktEventDataStream);
+	}
+
+	Processing: for(int i = 0; i < eventIterSize * LOOPS_PER_EVENT; i++)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=1 max=20000
 
 		DFRegion:
 		{
 #pragma HLS DATAFLOW
-			getXandYandInitStageStream(dataStream++, stageInStream, xStream, yStream, tsStream, pktEventDataStream,  stageOutStream);
+			initStageStream(stageInStream, stageOutStream);
 			rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
 
 //			std::cout << "Idx stage " << stage[loop] << " Data HW is: " << std::endl;
@@ -2017,7 +2060,7 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 		}
 	}
 
-	for(int i = 0; i < eventIterSize; i++)
+	Output: for(int i = 0; i < eventIterSize; i++)
 	{
 #pragma HLS PIPELINE
 #pragma HLS LOOP_TRIPCOUNT min=1 max=10000
