@@ -19,6 +19,7 @@
 // For example, if y = 128, x = 127, then 128/16 * 240 +  127 = 2047, it will return XXX
 // But if y = 128, x = 128, then 128/16 * 128 + 128 = 2048, it will return of value of the 0th word.
 // It has observed from the simulation.
+// If sotware overflow, the simulation will report scaling mode error.
 static col_pix_t saeHW[1][DVS_HEIGHT/RESHAPE_FACTOR][DVS_WIDTH];
 
 //const int innerCircleOffset[INNER_SIZE][2] = {{0, 3}, {1, 3}, {2, 2}, {3, 1},
@@ -443,7 +444,6 @@ void checkInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_u
 					tempCond[n][k] &= cond[n][j + k];
 				}
 				isCornerTemp |= tempCond[n][k];
-
 //				if (isCornerTemp == 1)
 //				{
 //					*isCorner = isCornerTemp ;
@@ -545,13 +545,12 @@ void checkInnerIdxV2(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap
 					tempCond[n][k] &= cond[n][j + k];
 				}
 				isCornerTemp |= tempCond[n][k];
-
-				if (isCornerTemp == 1)
-				{
-					*isCorner = isCornerTemp ;
-					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
-					return;
-				}
+//				if (isCornerTemp == 1)
+//				{
+//					*isCorner = isCornerTemp ;
+//					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 3) << std::endl;
+//					return;
+//				}
 			}
 		}
 		*isCorner = isCornerTemp ;
@@ -635,39 +634,17 @@ void checkOuterIdx(ap_uint<5> idxData[OUTER_SIZE + 8 - 1], ap_uint<5> size, ap_u
 					tempCond[n][k] &= cond[n][j + k];
 				}
 				isCornerTemp |= tempCond[n][k];
-
 //				if (isCornerTemp == 1)
 //				{
 //					*isCorner = isCornerTemp ;
 //					std::cout << "HW: Position is :" << (int)(i + k) << " and streak size is: " << (int)(n + 4) << std::endl;
 //					return;
 //				}
-
 			}
 		}
 
 		*isCorner = isCornerTemp ;
 	}
-}
-
-void finalCornerCheck(ap_uint<1> isStageCorner, ap_uint<1> *isFinalCorner)
-{
-	if(glStage == 0)
-	{
-		glStage = isStageCorner ? 1 : 2;
-	}
-	else if(glStage == 1)
-	{
-		*isFinalCorner = isStageCorner;
-		glStage = 0;
-	}
-	else
-	{
-		*isFinalCorner = 0;
-		glStage = 0;
-	}
-
-	glStageBak = glStage;
 }
 
 void finalCornerCheckStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> >  &stageStream, hls::stream< ap_uint<1> > &isFinalCornerStream)
@@ -696,6 +673,39 @@ void finalCornerCheckStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> > 
 	}
 }
 
+
+
+void feedbackStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> >  &stageStream, hls::stream< ap_uint<1> > &isFinalCornerStream)
+{
+#pragma HLS INLINE off
+#pragma PIPELINE rewind
+	ap_uint<2> outputStage;
+	if(glStage == 0)
+	{
+		if(isStageCorner)
+		{
+			outputStage =  1;
+		}
+		else
+		{
+			outputStage =  2;
+		}
+	}
+	else
+	{
+		outputStage =  0;
+	}
+
+	// Only write the stream at the first part of the event processing.
+	if(glFeedbackCounter%2 == 0)
+	{
+		stageStream << outputStage;
+	}
+	else
+	{
+		isFinalCornerStream << isStageCorner;
+	}
+}
 
 void testCheckInnerIdx(ap_uint<5> idxData[INNER_SIZE + 6 - 1], ap_uint<5> size, ap_uint<1> *isCorner)
 {
@@ -837,11 +847,11 @@ void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
 void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream<apUint17_t> &packetEventDataStream)
 {
 #pragma HLS PIPELINE
-	uint64_t tmp = *data++;
+	uint64_t tmp = *data;
 	X_TYPE xWr = ((tmp) >> POLARITY_X_ADDR_SHIFT) & POLARITY_X_ADDR_MASK;
 	Y_TYPE yWr = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
 	bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
-	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 32;
+	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 31;
 
 	xStream << xWr;
 	yStream << yWr;
@@ -852,6 +862,85 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	tsStream << ts;
 
 	packetEventDataStream << apUint17_t(xWr.to_int() + (yWr.to_int() << 8) + (pol << 16));
+}
+
+
+void initStageStream(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, hls::stream< ap_uint<2> >  &stageInStream,
+		hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream< ap_uint<2> >  &stageOutStream)
+{
+#pragma HLS INLINE off
+	ap_uint<2> stageIn = 0;
+	ap_uint<1> isStageCorner = 0;
+	// Every event will invoke this module two times, at the first time, we made it always zero, and the second time read from the stream.
+	if(glInitCounter%2 == 0)
+	{
+		stageIn = 0;
+	}
+    else
+    {
+        stageIn = stageInStream.read();
+    }
+	glStage = stageIn;
+
+	// This counter is used to syncronize this module and the feedback module.
+	// Make them have the common adder source.
+	glFeedbackCounter = glInitCounter;
+    glInitCounter++;
+
+	xStream << x;
+	yStream << y;
+	tsStream << ts;
+	stageOutStream << stageIn;
+}
+
+void getXandYandInitStageStream(const uint64_t * data, hls::stream< ap_uint<2> >  &stageInStream,
+		hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream<apUint17_t> &packetEventDataStream,
+		hls::stream< ap_uint<2> >  &stageOutStream)
+{
+#pragma HLS PIPELINE
+	uint64_t tmp = *data++;
+
+	X_TYPE xWr;
+	Y_TYPE yWr;
+	bool pol;
+	ap_uint<TS_TYPE_BIT_WIDTH> ts;
+
+
+	ap_uint<2> stageIn = 0;
+	// Every event will invoke this module two times, at the first time, we made it always zero, and the second time read from the stream.
+	if(glInitCounter%2 == 0)
+	{
+		stageIn = 0;
+//		tmp = *data++;
+
+		xWr = ((tmp) >> POLARITY_X_ADDR_SHIFT) & POLARITY_X_ADDR_MASK;
+		yWr = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
+		pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
+		ts = tmp >> 32;
+
+		packetEventDataStream << apUint17_t(xWr.to_int() + (yWr.to_int() << 8) + (pol << 16));
+	}
+    else
+    {
+        stageIn = stageInStream.read();
+
+		xWr = ((tmp) >> POLARITY_X_ADDR_SHIFT) & POLARITY_X_ADDR_MASK;
+		yWr = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
+		pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
+		ts = tmp >> 32;
+    }
+	glStage = stageIn;
+
+	// This counter is used to syncronize this module and the feedback module.
+	// Make them have the common adder source.
+	glFeedbackCounter = glInitCounter;
+    glInitCounter++;
+
+	xStream << xWr;
+	yStream << yWr;
+	tsStream << ts;
+
+	stageOutStream << stageIn;
 }
 
 template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
@@ -1775,62 +1864,6 @@ void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uin
 	checkOuterIdx<4>(idxData, size, isCorner);   // If resource is not enough, decrease this number to increase II a little.
 }
 
-void wrapInit(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, hls::stream< ap_uint<2> >  &stageInStream,
-		hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream< ap_uint<2> >  &stageOutStream)
-{
-#pragma HLS INLINE off
-	ap_uint<2> stageIn = 0;
-	ap_uint<1> isStageCorner = 0;
-	// Every event will invoke this module two times, at the first time, we made it always zero, and the second time read from the stream.
-	if(glInitCounter%2 == 0)
-	{
-		stageIn = 0;
-	}
-    else
-    {
-        stageIn = stageInStream.read();
-    }
-	glStage = stageIn;
-
-	// This counter is used to syncronize this module and the feedback module.
-	// Make them have the common adder source.
-	glFeedbackCounter = glInitCounter;
-    glInitCounter++;
-
-	xStream << x;
-	yStream << y;
-	tsStream << ts;
-	stageOutStream << stageIn;
-}
-
-void wrapOutput(hls::stream< ap_uint<1> > &isFinalCornerStream, ap_uint<1> *isCorner)
-{
-#pragma HLS INLINE off
-	if(!isFinalCornerStream.empty())
-	{
-		isFinalCornerStream >> *isCorner;
-	}
-}
-
-
-
-void initStream(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, hls::stream< ap_uint<2> >  &stageInStream,
-		hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream< ap_uint<2> >  &stageOutStream)
-{
-	for (int loop = 0; loop < 2; loop++)
-	{
-		xStream << x;
-		yStream << y;
-		tsStream << ts;
-
-		ap_uint<2> stageIn = 0;
-		if(!stageInStream.empty())
-		{
-			stageIn = stageInStream.read();
-			glStage = stageIn;
-		}
-	}
-}
 
 void fastCornerStreamHW(hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream< ap_uint<2> > &stageInStream,
 		hls::stream< ap_uint<2> >  &stageOutStream, hls::stream< ap_uint<1> > &isFinalCornerStream)
@@ -1861,37 +1894,12 @@ void fastCornerStreamHW(hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStre
 	}
 }
 
-void feedbackStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> >  &stageStream)
-{
-#pragma HLS INLINE off
-#pragma PIPELINE rewind
-	ap_uint<2> outputStage;
-	if(glStage == 0)
-	{
-		if(isStageCorner)
-		{
-			outputStage =  1;
-		}
-		else
-		{
-			outputStage =  2;
-		}
-	}
-	else
-	{
-		outputStage =  0;
-	}
-
-	// Only write the stream at the first part of the event processing.
-	if(glFeedbackCounter%2 == 0)
-	{
-		stageStream << outputStage;
-	}
-}
 
 
 void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> *isCorner)
 {
+#pragma HLS DATAFLOW
+
 	ap_uint<2> stage = 0;
 	ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
 	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
@@ -1908,13 +1916,14 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
 	hls::stream< ap_uint<2> >  stageInStream("stageInStream");
 	hls::stream< ap_uint<2> >  stageOutStream("stageOutStream");
+	hls::stream< ap_uint<1> > isFinalCornerStream("isFinalCornerStream");
 
 	glInitCounter = 0;
 
 	for (int loop = 0; loop < 2; loop++)
 	{
 		#pragma HLS DATAFLOW
-			wrapInit(x, y, ts, stageInStream, xStream, yStream, tsStream, stageOutStream);
+			initStageStream(x, y, ts, stageInStream, xStream, yStream, tsStream, stageOutStream);
 			rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
 
 //			std::cout << "Idx stage " << stage[loop] << " Data HW is: " << std::endl;
@@ -1928,35 +1937,36 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 			convertInterface<4>(outer, size, inStream);
 			sortedIdxStream<2>(inStream, size, idxData);
 			checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
-			feedbackStream(isStageCorner, stageInStream);
-			*isCorner = isStageCorner;
+			feedbackStream(isStageCorner, stageInStream, isFinalCornerStream);
 	}
+	isFinalCornerStream >> *isCorner;
 }
 
-void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream,  hls::stream<apUint17_t> &packetEventDataStream, int32_t *eventSlice)
+void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<apUint17_t> &packetEventDataStream, int32_t *eventSlice)
 {
-	apUint17_t tmp1 = packetEventDataStream.read();
-//	apUint15_t miniSumRet = 0;
-//	ap_int<9> tmp2 = miniSumRet.range(8, 0);
-//	apUint6_t tmpOF = isCorner;
-
-	ap_uint<32> output = tmp1;
-	ap_uint<1> isCorner = isFinalCornerStream.read();
-	output[31] = isCorner;
-//		std :: cout << "tmp1 is "  << std::hex << tmp1 << std :: endl;
-//		std :: cout << "tmp2 is "  << std::hex << tmp2 << std :: endl;
-//		std :: cout << "output is "  << std::hex << output << std :: endl;
-//		std :: cout << "eventSlice is "  << std::hex << output.to_int() << std :: endl;
-	*eventSlice++ = output.to_int();
+#pragma HLS INLINE
+	// Only output the result at the last part of the event processing.
+//	if(glFeedbackCounter%2 == 1)
+//	{
+		apUint17_t tmp1 = apUint17_t(packetEventDataStream.read());
+		ap_uint<32> output = tmp1;
+		ap_uint<1> isCorner = isFinalCornerStream.read();
+		output[31] = isCorner;
+		*eventSlice++ = output.to_int();
+//	}
 }
 
 void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *eventSlice)
 {
 #pragma HLS DATAFLOW
-    ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
-    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+
+	ap_uint<2> stage = 0;
+	ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
 #pragma HLS STREAM variable=inStream depth=2 dim=1
 #pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+	ap_uint<5> size;
+#pragma HLS STREAM variable=size depth=5 dim=1
 
     hls::stream<X_TYPE>  xStream("xStream");
     hls::stream<Y_TYPE>  yStream("yStream");
@@ -1966,12 +1976,11 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 #pragma HLS STREAM variable=pktEventDataStream depth=2 dim=1
 #pragma HLS RESOURCE variable=pktEventDataStream core=FIFO_SRL
 
-	hls::stream< ap_uint<2> >  stageStream("stageStream");
-#pragma HLS STREAM variable=stageStream depth=2 dim=1
+	hls::stream< ap_uint<2> >  stageInStream("stageInStream");
+	hls::stream< ap_uint<2> >  stageOutStream("stageOutStream");
 
 	hls::stream< ap_uint<1> > isFinalCornerStream("isFinalCornerStream");
 
-    ap_uint<5> size;
     ap_uint<5> idxData[OUTER_SIZE];
 	X_TYPE x;
 	Y_TYPE y;
@@ -1980,20 +1989,39 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 
 	ap_uint<1> isCorner;
 
-    getXandY(dataStream, xStream, yStream, tsStream, pktEventDataStream);
-    rwSAEStream<2>(xStream, yStream, tsStream, stageStream, outer, &size);
+	glInitCounter = 0;
 
-//	std::cout << "Idx stage " << *stage << " Data HW is: " << std::endl;
-//	for (int i = 0; i < size; i++)
-//	{
-//		std::cout << (int)outer[i]<< "\t";
-//	}
-//	std::cout << std::endl;
+	uint16_t  eventIterSize = eventsArraySize;
 
-//    sortedIdxData<2>(outer, size, idxData);
-    convertInterface<4>(outer, size, inStream);
-	sortedIdxStream<4>(inStream, size, idxData);
-	checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
-	finalCornerCheckStream(isStageCorner, stageStream, isFinalCornerStream);
-	outputResult(isFinalCornerStream, pktEventDataStream, eventSlice++);
+	for(int i = 0; i < eventIterSize * LOOPS_PER_EVENT; i++)
+	{
+#pragma HLS LOOP_TRIPCOUNT min=1 max=20000
+
+		DFRegion:
+		{
+#pragma HLS DATAFLOW
+			getXandYandInitStageStream(dataStream++, stageInStream, xStream, yStream, tsStream, pktEventDataStream,  stageOutStream);
+			rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
+
+//			std::cout << "Idx stage " << stage[loop] << " Data HW is: " << std::endl;
+//			for (int i = 0; i < size; i++)
+//			{
+//				std::cout << (int)outer[i]<< "\t";
+//			}
+//			std::cout << std::endl;
+		//    sortedIdxData<2>(outer, size, idxData);
+			convertInterface<4>(outer, size, inStream);
+			sortedIdxStream<2>(inStream, size, idxData);
+			checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
+			feedbackStream(isStageCorner, stageInStream, isFinalCornerStream);
+		}
+	}
+
+	for(int i = 0; i < eventIterSize; i++)
+	{
+#pragma HLS PIPELINE
+#pragma HLS LOOP_TRIPCOUNT min=1 max=10000
+		outputResult(isFinalCornerStream, pktEventDataStream, eventSlice++);
+	}
+
 }

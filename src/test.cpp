@@ -10,7 +10,6 @@ using namespace std;
 #include "time.h"
 //#include "insertion_cell_sort.h"
 
-const static int DEBUG=1;
 const static int MAX_NUMBER=1000;
 #define DTYPE ap_uint<32>
 #define TEST_TIMES 200
@@ -460,13 +459,14 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
 
   *found_streak = false;
 
-
+#if DEBUG
   std::cout << "Idx Inner Data SW is: " << std::endl;
   for (int i=0; i<16; i++)
   {
 		cout << sae_[pol][pix_x+circle3_[i][0]][pix_y+circle3_[i][1]] << "\t";
   }
 	std::cout << std::endl;
+#endif
 
   isFeatureOutterLoop:for (int i=0; i<16; i++)
   {
@@ -505,7 +505,9 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
       if (!did_break)
       {
         *found_streak = true;
+#if DEBUG
 		cout << "Inner Corner position is : " << i << " and streak size is: " << streak_size << endl;
+#endif
         break;
       }
     }
@@ -520,13 +522,14 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
   {
     *found_streak = false;
 
-
+#if DEBUG
 	std::cout << "Idx Outer Data SW is: " << std::endl;
 	for (int i=0; i<20; i++)
 	{
 	cout << sae_[pol][pix_x+circle4_[i][0]][pix_y+circle4_[i][1]] << "\t";
 	}
 	std::cout << std::endl;
+#endif
 
     FastDetectorisFeature_label6:for (int i=0; i<20; i++)
     {
@@ -563,7 +566,7 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
         {
           *found_streak = true;
 		  cout << "Outer Corner position is : " << i << " and streak size is: " << streak_size << endl;
-          break;
+		  break;
         }
       }
       if (*found_streak)
@@ -586,10 +589,11 @@ void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 		int y = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
 		bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
 		int ts = tmp >> 32;
-
+#if DEBUG
 		cout << "x : " << x << endl;
 		cout << "y : " << y << endl;
 		cout << "ts : " << ts << endl;
+#endif
 
 		bool isCorner = 0;
 
@@ -608,131 +612,59 @@ int main ()
 
     int total_err_cnt = 0;
 	int retval=0;
-//	/******************* Test parseEvents module from random value**************************/
-//	int32_t eventCnt = 500;
-//	uint64_t data[eventCnt];
-//	uint32_t ts[eventCnt];
-//	int32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
-//
-//	ap_uint<64> x, y;
-//	ap_uint<1> pol;
-//
-//	for(int k = 0; k < TEST_TIMES; k++)
-//	{
-//		cout << "Test " << k << ":" << endl;
-//
-//	    int err_cnt = 0;
-//
-//		for (int i = 0; i < eventCnt; i++)
-//		{
-//			ts[i]  = rand();
-//		}
-//		sort(ts, ts+eventCnt);
-//
-//		for (int i = 0; i < eventCnt; i++)
-//		{
-//			x = rand()%50 + 40;
-//			y = rand()%50 + 40;
-//			pol = rand()%2;
-////			idx = rand()%3;
-//	//		x = 255;
-//	//		y = 240;
-////			cout << "x : " << x << endl;
-////			cout << "y : " << y << endl;
-////			cout << "idx : " << idx << endl;
-//
-//			data[i] = (uint64_t)(ts[i] << 32) + (uint64_t)(x << 17) + (uint64_t)(y << 2) + (pol << 1);
-////			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
-//		}
-//
-//
-//		parseEventsSW(data, eventCnt, eventSliceSW);
-//		parseEventsHW(data, eventCnt, eventSlice);
-//
-//		for (int j = 0; j < eventCnt; j++)
-//		{
-//			if (eventSlice[j] != eventSliceSW[j])
-//			{
-////				std::cout << "eventSliceSW is: " << eventSliceSW[j] << std::endl;
-////				std::cout << "eventSlice is: " << eventSlice[j] << std::endl;
-////
-////				err_cnt++;
-////				cout << "Mismatch detected on TEST " << k << " and the mismatch index is: " << j << endl;
-//			}
-//		}
-//
-//		if(err_cnt == 0)
-//		{
-//			cout << "Test " << k << " passed." << endl;
-//		}
-//		else
-//		{
-//			cout << "Test " << k << " failed!!!" << endl;
-//		}
-//		total_err_cnt += err_cnt;
-//		cout << endl;
-//	}
-
-	/******************* Test FastCheckOuterCornerSW module from random value**************************/
-//	srand((unsigned)time(NULL));
-	testTimes = 15000;
-
-	// The raw data for SW and HW are exactly the same, except the data type.
+	/******************* Test parseEvents module from random value**************************/
+	int32_t eventCnt = 500;
 	uint8_t x, y;
-	uint32_t ts[testTimes];
+	uint64_t ts[eventCnt];
 	bool pol;
-	ap_uint<2> stage[2];
-	stage[0] = ap_uint<2>(0);
-	stage[1] = ap_uint<2>(1);
+	uint64_t data[eventCnt];
+	int32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
 
-//	uint8_t outputIdxSW[OUTER_SIZE];
-//	ap_uint<5> outputIdxHW[OUTER_SIZE];
-
-	bool isOuterCornerSW = 0;
-	ap_uint<1>  isOuterCornerHW = 0;
-
-	uint8_t size = OUTER_SIZE;
-
-	for (int i = 0; i < testTimes; i++)
-	{
-		ts[i]  = rand();
-	}
-	sort(ts, ts+testTimes);
-
-	for(int k = 0; k < testTimes; k++)
+	for(int k = 0; k < TEST_TIMES; k++)
 	{
 		cout << "Test " << k << ":" << endl;
 
-		int err_cnt = 0;
+	    int err_cnt = 0;
 
-// 	    cout << "\nArray after sorting using "
-// 	         "default sort is : \n";
-// 	    for (int i = 0; i < eventCnt; ++i)
-// 	        cout << ts[i] << " ";
+		for (int i = 0; i < eventCnt; i++)
+		{
+			ts[i]  = rand();
+		}
+		sort(ts, ts+eventCnt);
 
+		for (int i = 0; i < eventCnt; i++)
+		{
 			x = rand()%220 + 10;
 			y = rand()%110 + 10;
+			pol = rand()%2;
 //			idx = rand()%3;
 	//		x = 255;
 	//		y = 240;
-			cout << "x : " << (int)x << endl;
-			cout << "y : " << (int)y << endl;
-			cout << "ts : " << ts[k] << endl;
+//			cout << "x : " << x << endl;
+//			cout << "y : " << y << endl;
+//			cout << "idx : " << idx << endl;
 
-		if (k == 1235)
-		{
-			int tmp = 0;
+
+
+
+			data[i] = (uint64_t)(ts[i] << 32) + (uint64_t)(x << 17) + (uint64_t)(y << 2) + (pol << 1);
+//			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
 		}
 
-		fastCornerHW(x, y, ts[k], &isOuterCornerHW);
-		FastDetectorisFeature(x, y, ts[k], pol, &isOuterCornerSW);
 
-		cout << "isCornerSW is: " << isOuterCornerSW << endl;
-		cout << "isCornerHW is: " << isOuterCornerHW << endl;
+		parseEventsSW(data, eventCnt, eventSliceSW);
+		parseEventsHW(data, eventCnt, eventSlice);
 
-		if (isOuterCornerSW != isOuterCornerHW.to_bool())
+		for (int j = 0; j < eventCnt; j++)
 		{
-			err_cnt++;
+			if (eventSlice[j] != eventSliceSW[j])
+			{
+				std::cout << "eventSliceSW is: " << eventSliceSW[j] << std::endl;
+				std::cout << "eventSlice is: " << eventSlice[j] << std::endl;
+
+				err_cnt++;
+				cout << "Mismatch detected on TEST " << k << " and the mismatch index is: " << j << endl;
+			}
 		}
 
 		if(err_cnt == 0)
@@ -746,6 +678,80 @@ int main ()
 		total_err_cnt += err_cnt;
 		cout << endl;
 	}
+
+//	/******************* Test FastCheckOuterCornerSW module from random value**************************/
+//	srand((unsigned)time(NULL));
+//	testTimes = 15000;
+//
+//	// The raw data for SW and HW are exactly the same, except the data type.
+//	uint8_t x, y;
+//	uint32_t ts[testTimes];
+//	bool pol;
+//	ap_uint<2> stage[2];
+//	stage[0] = ap_uint<2>(0);
+//	stage[1] = ap_uint<2>(1);
+//
+////	uint8_t outputIdxSW[OUTER_SIZE];
+////	ap_uint<5> outputIdxHW[OUTER_SIZE];
+//
+//	bool isOuterCornerSW = 0;
+//	ap_uint<1>  isOuterCornerHW = 0;
+//
+//	uint8_t size = OUTER_SIZE;
+//
+//	for (int i = 0; i < testTimes; i++)
+//	{
+//		ts[i]  = rand();
+//	}
+//	sort(ts, ts+testTimes);
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//		int err_cnt = 0;
+//
+//// 	    cout << "\nArray after sorting using "
+//// 	         "default sort is : \n";
+//// 	    for (int i = 0; i < eventCnt; ++i)
+//// 	        cout << ts[i] << " ";
+//
+//			x = rand()%220 + 10;
+//			y = rand()%110 + 10;
+////			idx = rand()%3;
+//	//		x = 255;
+//	//		y = 240;
+//			cout << "x : " << (int)x << endl;
+//			cout << "y : " << (int)y << endl;
+//			cout << "ts : " << ts[k] << endl;
+//
+//		if (k == 1235)
+//		{
+//			int tmp = 0;
+//		}
+//
+//		fastCornerHW(x, y, ts[k], &isOuterCornerHW);
+//		FastDetectorisFeature(x, y, ts[k], pol, &isOuterCornerSW);
+//
+//		cout << "isCornerSW is: " << isOuterCornerSW << endl;
+//		cout << "isCornerHW is: " << isOuterCornerHW << endl;
+//
+//		if (isOuterCornerSW != isOuterCornerHW.to_bool())
+//		{
+//			err_cnt++;
+//		}
+//
+//		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+//		else
+//		{
+//			cout << "Test " << k << " failed!!!" << endl;
+//		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
 //	/******************* Test FastCheckOuterCornerSW module from random value**************************/
 ////	srand((unsigned)time(NULL));

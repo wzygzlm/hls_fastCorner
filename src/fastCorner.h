@@ -6,6 +6,8 @@
 #include "hls_stream.h"
 #include "ap_axi_sdata.h"
 
+#define DEBUG 1
+
 #define DVS_WIDTH  240
 
 #define POLARITY_SHIFT 1
@@ -42,6 +44,8 @@ typedef ap_uint<1> apUint1_t;
 #define MERGE_STAGES 5
 
 #define SYMBOL_BITS 5
+
+#define LOOPS_PER_EVENT 2   // To process one event, how many loops are required
 
 //#define SIZE 16
 void mergeSortParallelWithSize(ap_uint<TS_TYPE_BIT_WIDTH> A[OUTER_SIZE], ap_uint<8> num_symbols,  ap_uint<TS_TYPE_BIT_WIDTH> B[OUTER_SIZE]);
