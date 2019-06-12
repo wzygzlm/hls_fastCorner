@@ -2,13 +2,6 @@
     <sourceFile name="">
         <directive functionName="parseEventsHW" label="" functionLabel="">
             <pragma name="INTERFACE">
-                <option name="ap_fifo" value="" positionalBoolean="mode"/>
-                <option name="depth" value="5000"/>
-                <option name="port" value="dataStream" positionalBoolean="4"/>
-            </pragma>
-        </directive>
-        <directive functionName="parseEventsHW" label="" functionLabel="">
-            <pragma name="INTERFACE">
                 <option name="s_axilite" value="" positionalBoolean="mode"/>
                 <option name="register" value="" positionalBoolean="1"/>
                 <option name="port" value="return" positionalBoolean="4"/>
@@ -24,6 +17,13 @@
                 <option name="num_read_outstanding" value="0"/>
                 <option name="max_read_burst_length" value="2"/>
                 <option name="max_write_burst_length" value="256"/>
+            </pragma>
+        </directive>
+        <directive functionName="parseEventsHW" label="" functionLabel="">
+            <pragma name="INTERFACE">
+                <option name="ap_fifo" value="" positionalBoolean="mode"/>
+                <option name="depth" value="5000"/>
+                <option name="port" value="data" positionalBoolean="4"/>
             </pragma>
         </directive>
     </sourceFile>

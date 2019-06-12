@@ -1978,7 +1978,7 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 	}
 }
 
-void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<apUint17_t> &packetEventDataStream, int32_t *eventSlice)
+void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<apUint17_t> &packetEventDataStream, uint32_t *eventSlice)
 {
 #pragma HLS INLINE
 	// Only output the result at the last part of the event processing.
@@ -1992,7 +1992,7 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 //	}
 }
 
-void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *eventSlice)
+void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlice)
 {
 #pragma HLS DATAFLOW
 
@@ -2002,7 +2002,6 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 #pragma HLS STREAM variable=inStream depth=2 dim=1
 #pragma HLS RESOURCE variable=inStream core=FIFO_SRL
 	ap_uint<5> size;
-#pragma HLS STREAM variable=size depth=5 dim=1
 
     hls::stream<X_TYPE>  xStream("xStream");
     hls::stream<Y_TYPE>  yStream("yStream");
@@ -2032,13 +2031,13 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 	GetData: for(int i = 0; i < eventIterSize; i++)
 	{
 #pragma HLS PIPELINE
-#pragma HLS LOOP_TRIPCOUNT min=1 max=10000
-		getXandY(dataStream++, xStream, yStream, tsStream, pktEventDataStream);
+#pragma HLS LOOP_TRIPCOUNT min=1 max=5000
+		getXandY(data++, xStream, yStream, tsStream, pktEventDataStream);
 	}
 
 	Processing: for(int i = 0; i < eventIterSize * LOOPS_PER_EVENT; i++)
 	{
-#pragma HLS LOOP_TRIPCOUNT min=1 max=20000
+#pragma HLS LOOP_TRIPCOUNT min=1 max=10000
 
 		DFRegion:
 		{
@@ -2063,7 +2062,7 @@ void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *even
 	Output: for(int i = 0; i < eventIterSize; i++)
 	{
 #pragma HLS PIPELINE
-#pragma HLS LOOP_TRIPCOUNT min=1 max=10000
+#pragma HLS LOOP_TRIPCOUNT min=1 max=5000
 		outputResult(isFinalCornerStream, pktEventDataStream, eventSlice++);
 	}
 
