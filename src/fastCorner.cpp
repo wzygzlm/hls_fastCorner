@@ -699,7 +699,8 @@ void feedbackStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> >  &stageS
 	// Only write the stream at the first part of the event processing.
 	if(glFeedbackCounter%2 == 0)
 	{
-		stageStream << outputStage;
+//		stageStream << outputStage;
+		isFinalCornerStream << isStageCorner;
 	}
 	else
 	{
@@ -876,7 +877,8 @@ void initStageStream(hls::stream< ap_uint<2> >  &stageInStream, hls::stream< ap_
 	}
     else
     {
-        stageIn = stageInStream.read();
+        // stageIn = stageInStream.read();
+    	stageIn = 1;
     }
 	glStage = stageIn;
 
@@ -1986,7 +1988,9 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 //	{
 		apUint17_t tmp1 = apUint17_t(packetEventDataStream.read());
 		ap_uint<32> output = tmp1;
-		ap_uint<1> isCorner = isFinalCornerStream.read();
+		ap_uint<1> isCornerStage0 = isFinalCornerStream.read();
+		ap_uint<1> isCornerStage1 = isFinalCornerStream.read();
+		ap_uint<1> isCorner = isCornerStage0 & isCornerStage1;
 		output[31] = isCorner;
 		*eventSlice++ = output.to_int();
 //	}

@@ -580,7 +580,7 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
   //return *found_streak;
 }
 
-void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, int32_t *eventSlice)
+void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint32_t *eventSlice)
 {
 	for (int i = 0; i < eventsArraySize; i++)
 	{
@@ -618,9 +618,9 @@ int main ()
 	uint64_t ts[eventCnt];
 	bool pol;
 	uint64_t data[eventCnt];
-	int32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
+	uint32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
 
-	testTimes = 10;
+	testTimes = 5;
 
 	for(int k = 0; k < testTimes; k++)
 	{
