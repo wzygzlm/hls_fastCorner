@@ -614,9 +614,9 @@ int main ()
 	int retval=0;
 	/******************* Test parseEvents module from random value**************************/
 	int32_t eventCnt = 5000;
-	uint8_t x, y;
+	uint8_t x[eventCnt], y[eventCnt];
 	uint64_t ts[eventCnt];
-	bool pol;
+	bool pol[eventCnt];
 	uint64_t data[eventCnt];
 	uint32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
 
@@ -630,15 +630,18 @@ int main ()
 
 		for (int i = 0; i < eventCnt; i++)
 		{
-			ts[i]  = rand();
+			// Ts is set to 30bits on hardware,
+		    // so we sohould guarantee ts is not out of range.
+			ts[i]  = rand()%0x3fffffff;
+
 		}
 		sort(ts, ts+eventCnt);
 
 		for (int i = 0; i < eventCnt; i++)
 		{
-			x = rand()%220 + 10;
-			y = rand()%110 + 10;
-			pol = rand()%2;
+			x[i] = rand()%220 + 10;
+			y[i] = rand()%110 + 10;
+			pol[i] = rand()%2;
 //			idx = rand()%3;
 	//		x = 255;
 	//		y = 240;
@@ -646,7 +649,7 @@ int main ()
 //			cout << "y : " << y << endl;
 //			cout << "idx : " << idx << endl;
 
-			data[i] = (uint64_t)(ts[i] << 32) + (uint64_t)(x << 17) + (uint64_t)(y << 2) + (pol << 1);
+			data[i] = (uint64_t)(ts[i] << 32) + (uint64_t)(x[i] << 17) + (uint64_t)(y[i] << 2) + (pol[i] << 1);
 //			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
 		}
 
@@ -660,6 +663,11 @@ int main ()
 			{
 				std::cout << "eventSliceSW is: " << eventSliceSW[j] << std::endl;
 				std::cout << "eventSlice is: " << eventSlice[j] << std::endl;
+
+				cout << "j : " << j << endl;
+				cout << "x : " << int(x[j]) << endl;
+				cout << "y : " << int(y[j]) << endl;
+				cout << "ts : " << ts[j] << endl;
 
 				err_cnt++;
 				cout << "Mismatch detected on TEST " << k << " and the mismatch index is: " << j << endl;

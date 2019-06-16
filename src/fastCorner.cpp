@@ -88,13 +88,14 @@ void convertInterface(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> 
 			for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
 			{
 #pragma HLS UNROLL
-				const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-				ap_uint<8 + bitOffset> colIdx;
-				// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-				colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>((i + j) * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-				colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-
-				tmpData[colIdx] = inData[i + j][yIndex];
+//				const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+//				ap_uint<8 + bitOffset> colIdx;
+//				// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+//				colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>((i + j) * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+//				colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+//
+//				tmpData[colIdx] = inData[i + j][yIndex];
+				tmpData[(i + j)*TS_TYPE_BIT_WIDTH + yIndex] = inData[i + j][yIndex];
 			}
 		}
 	}
@@ -205,13 +206,14 @@ assert(size <= OUTER_SIZE);
 		for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
 		{
 #pragma HLS UNROLL
-			const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-			ap_uint<8 + bitOffset> colIdx;
-			// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-			colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(j * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-			colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-
-			inData[j][yIndex] = tmpData[colIdx];
+//			const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+//			ap_uint<8 + bitOffset> colIdx;
+//			// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+//			colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(j * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+//			colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+//
+//			inData[j][yIndex] = tmpData[colIdx];
+			inData[j][yIndex] = tmpData[j * TS_TYPE_BIT_WIDTH + yIndex];
 		}
 	}
 
@@ -758,14 +760,14 @@ ap_uint<TS_TYPE_BIT_WIDTH> readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
 	readWiderBitsLoop: for(int8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
 	{
 #pragma HLS UNROLL
-		const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-		ap_uint<8 + bitOffset> colIdx;
-		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-		colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-
-		retData[yIndex] = colData[colIdx];
-//		retData[yIndex] = colData[ap_uint<TS_TYPE_BIT_WIDTH>_BIT_WIDTH*idx + yIndex];
+//		const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+//		ap_uint<8 + bitOffset> colIdx;
+//		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+//		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+//		colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+//
+//		retData[yIndex] = colData[colIdx];
+		retData[yIndex] = colData[TS_TYPE_BIT_WIDTH*idx + yIndex];
 	}
 	return retData;
 }
@@ -776,13 +778,14 @@ void writeOneDataToCol(col_pix_t *colData, ap_uint<8> idx, ap_uint<TS_TYPE_BIT_W
 	writeWiderBitsLoop: for(int8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
 	{
 #pragma HLS UNROLL
-		const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-		ap_uint<8 + bitOffset> colIdx;
-		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-		colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-
-		(*colData)[colIdx] = toWriteData[yIndex];
+//		const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+//		ap_uint<8 + bitOffset> colIdx;
+//		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+//		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+//		colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+//
+//		(*colData)[colIdx] = toWriteData[yIndex];
+		(*colData)[TS_TYPE_BIT_WIDTH*idx + yIndex] = toWriteData[yIndex];
 	}
 }
 
@@ -2049,13 +2052,14 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlic
 			initStageStream(stageInStream, stageOutStream);
 			rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
 
-//			std::cout << "Idx stage " << stage[loop] << " Data HW is: " << std::endl;
+//			std::cout << "Idx stage " << i/2 << " Data HW is: " << std::endl;
 //			for (int i = 0; i < size; i++)
 //			{
 //				std::cout << (int)outer[i]<< "\t";
 //			}
 //			std::cout << std::endl;
-		//    sortedIdxData<2>(outer, size, idxData);
+//		    sortedIdxData<2>(outer, size, idxData);
+
 			convertInterface<4>(outer, size, inStream);
 			sortedIdxStream<2>(inStream, size, idxData);
 			checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.

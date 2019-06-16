@@ -30,7 +30,7 @@ typedef ap_uint<1> apUint1_t;
 #define Y_TYPE ap_uint<8>
 
 // Change them together
-#define TS_TYPE_BIT_WIDTH 32
+#define TS_TYPE_BIT_WIDTH 30
 #define LOG_TS_TYPE_BIT_WIDTH 5   // Log(TS_TYPE_BIT_WIDTH), used in pix read and pix write
 
 #define col_pix_t ap_uint<RESHAPE_FACTOR * TS_TYPE_BIT_WIDTH>
