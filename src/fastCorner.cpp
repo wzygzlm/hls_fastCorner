@@ -2049,37 +2049,22 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlic
 	ap_uint<2> stage = 0;
 	ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
 
-	// TODO: Some of the following stream's depth is not necessary, find and remove them.
 	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
-#pragma HLS STREAM variable=inStream depth=2 dim=1
-#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
 	ap_uint<5> size;
-#pragma HLS STREAM variable=size depth=5 dim=1
+#pragma HLS STREAM variable=size depth=3 dim=1
 
     hls::stream<X_TYPE>  xStream("xStream");
-#pragma HLS STREAM variable=xStream depth=5 dim=1
-#pragma HLS RESOURCE variable=xStream core=FIFO_SRL
     hls::stream<Y_TYPE>  yStream("yStream");
-#pragma HLS STREAM variable=yStream depth=5 dim=1
-#pragma HLS RESOURCE variable=yStream core=FIFO_SRL
     hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
-#pragma HLS STREAM variable=tsStream depth=5 dim=1
-#pragma HLS RESOURCE variable=tsStream core=FIFO_SRL
 
 	hls::stream<apUint17_t> pktEventDataStream("pktEventDataStream");
-#pragma HLS STREAM variable=pktEventDataStream depth=10 dim=1
+#pragma HLS STREAM variable=pktEventDataStream depth=3 dim=1
 #pragma HLS RESOURCE variable=pktEventDataStream core=FIFO_SRL
 
 	hls::stream< ap_uint<2> >  stageInStream("stageInStream");
-#pragma HLS STREAM variable=stageInStream depth=5 dim=1
-#pragma HLS RESOURCE variable=stageInStream core=FIFO_SRL
 	hls::stream< ap_uint<2> >  stageOutStream("stageOutStream");
-#pragma HLS STREAM variable=stageOutStream depth=5 dim=1
-#pragma HLS RESOURCE variable=stageOutStream core=FIFO_SRL
 
 	hls::stream< ap_uint<1> > isFinalCornerStream("isFinalCornerStream");
-#pragma HLS STREAM variable=isFinalCornerStream depth=5 dim=1
-#pragma HLS RESOURCE variable=isFinalCornerStream core=FIFO_SRL
 
     ap_uint<5> idxData[OUTER_SIZE];
 	X_TYPE x;

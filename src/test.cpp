@@ -669,10 +669,6 @@ int main ()
 //			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
 		}
 
-		if (k == 17)
-		{
-			int tmp = 0;
-		}
 		parseEventsSW(data, eventCnt, eventSliceSW);
 		parseEventsHW(data, eventCnt, eventSlice);
 
