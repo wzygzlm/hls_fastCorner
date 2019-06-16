@@ -2022,7 +2022,23 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 	ap_uint<1> isCornerStage1 = isFinalCornerStream.read();
 	ap_uint<1> isCorner = isCornerStage0 & isCornerStage1;
 	output[31] = isCorner;
-	*eventSlice++ = output.to_int();
+
+	ap_uint<32> xWr, yWr;
+	bool pol;
+
+	xWr = 239 - (tmp1 & 0xff);
+	yWr = 179 - ((tmp1 >> 8) & 0xff);
+	pol = tmp1.bit(16).to_bool();
+
+	ap_uint<32> tmpOutput = (0 << 31) + (yWr << 22) + (xWr << 12)  + (pol << 11) + isCorner;
+
+	// Changed to small endian mode to send it to jAER
+	output.range(7,0) = tmpOutput.range(31,24);
+	output.range(15,8) = tmpOutput.range(23,16);
+	output.range(23,16) = tmpOutput.range(15,8);
+	output.range(31,24) = tmpOutput.range(7,0);
+
+	*eventSlice++ = output.to_uint();
 //	}
 }
 
@@ -2032,23 +2048,38 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlic
 
 	ap_uint<2> stage = 0;
 	ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+
+	// TODO: Some of the following stream's depth is not necessary, find and remove them.
 	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
 #pragma HLS STREAM variable=inStream depth=2 dim=1
 #pragma HLS RESOURCE variable=inStream core=FIFO_SRL
 	ap_uint<5> size;
+#pragma HLS STREAM variable=size depth=5 dim=1
 
     hls::stream<X_TYPE>  xStream("xStream");
+#pragma HLS STREAM variable=xStream depth=5 dim=1
+#pragma HLS RESOURCE variable=xStream core=FIFO_SRL
     hls::stream<Y_TYPE>  yStream("yStream");
+#pragma HLS STREAM variable=yStream depth=5 dim=1
+#pragma HLS RESOURCE variable=yStream core=FIFO_SRL
     hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
+#pragma HLS STREAM variable=tsStream depth=5 dim=1
+#pragma HLS RESOURCE variable=tsStream core=FIFO_SRL
 
 	hls::stream<apUint17_t> pktEventDataStream("pktEventDataStream");
-#pragma HLS STREAM variable=pktEventDataStream depth=2 dim=1
+#pragma HLS STREAM variable=pktEventDataStream depth=10 dim=1
 #pragma HLS RESOURCE variable=pktEventDataStream core=FIFO_SRL
 
 	hls::stream< ap_uint<2> >  stageInStream("stageInStream");
+#pragma HLS STREAM variable=stageInStream depth=5 dim=1
+#pragma HLS RESOURCE variable=stageInStream core=FIFO_SRL
 	hls::stream< ap_uint<2> >  stageOutStream("stageOutStream");
+#pragma HLS STREAM variable=stageOutStream depth=5 dim=1
+#pragma HLS RESOURCE variable=stageOutStream core=FIFO_SRL
 
 	hls::stream< ap_uint<1> > isFinalCornerStream("isFinalCornerStream");
+#pragma HLS STREAM variable=isFinalCornerStream depth=5 dim=1
+#pragma HLS RESOURCE variable=isFinalCornerStream core=FIFO_SRL
 
     ap_uint<5> idxData[OUTER_SIZE];
 	X_TYPE x;

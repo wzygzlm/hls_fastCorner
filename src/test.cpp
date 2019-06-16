@@ -594,8 +594,8 @@ void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint32_t *eve
 	for (int i = 0; i < eventsArraySize; i++)
 	{
 		uint64_t tmp = *dataStream++;
-		int x = ((tmp) >> POLARITY_X_ADDR_SHIFT) & POLARITY_X_ADDR_MASK;
-		int y = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
+		uint32_t x = ((tmp) >> POLARITY_X_ADDR_SHIFT) & POLARITY_X_ADDR_MASK;
+		uint32_t y = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
 		bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
 		int ts = tmp >> 32;
 #if DEBUG
@@ -608,10 +608,20 @@ void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint32_t *eve
 
 		FastDetectorisFeature(x, y, ts, pol, &isCorner);
 
-		ap_uint<32> output = apUint17_t(x + (y << 8) + (pol << 16));
-		output[31] = isCorner;
+		x = 239 - x;
+		y = 179 - y;
 
-		*eventSlice++ = output.to_int();
+		ap_uint<32> tmpOutput = (0 << 31) + (y << 22) + (x << 12)  + (pol << 11) + isCorner;
+
+		ap_uint<32> output;
+
+		// Changed to small endian mode to send it to jAER
+		output.range(7,0) = tmpOutput.range(31,24);
+		output.range(15,8) = tmpOutput.range(23,16);
+		output.range(23,16) = tmpOutput.range(15,8);
+		output.range(31,24) = tmpOutput.range(7,0);
+
+		*eventSlice++ = output.to_uint();
 	}
 }
 
@@ -629,7 +639,7 @@ int main ()
 	uint64_t data[eventCnt];
 	uint32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
 
-	testTimes = 20;
+	testTimes = 10;
 
 	for(int k = 0; k < testTimes; k++)
 	{
