@@ -8,7 +8,7 @@
 
 #define DEBUG 0
 
-#define DVS_WIDTH  240
+#define DVS_WIDTH  204
 
 #define POLARITY_SHIFT 1
 #define POLARITY_MASK 0x00000001
@@ -24,13 +24,13 @@ typedef ap_uint<1> apUint1_t;
 
 // Change these two together
 #define RESHAPE_FACTOR 16
-#define DVS_HEIGHT RESHAPE_FACTOR*8
+#define DVS_HEIGHT RESHAPE_FACTOR*10
 
 #define X_TYPE ap_uint<8>
 #define Y_TYPE ap_uint<8>
 
 // Change them together
-#define TS_TYPE_BIT_WIDTH 30
+#define TS_TYPE_BIT_WIDTH 32
 #define LOG_TS_TYPE_BIT_WIDTH 5   // Log(TS_TYPE_BIT_WIDTH), used in pix read and pix write
 
 #define col_pix_t ap_uint<RESHAPE_FACTOR * TS_TYPE_BIT_WIDTH>

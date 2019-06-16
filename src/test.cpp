@@ -441,23 +441,27 @@ void FastDetectorisOuterFeature(int pix_x, int pix_y, int timesmp, bool polarity
 
 void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, bool *found_streak)
 {
+	if(polarity==0)
+	{
+		*found_streak = false;
+		return;
+	}
 
-  // update SAE
-  //const int pol = polarity ? 1 : 0; //conver plo to 1 or 0
-  const int pol = 0;
-  sae_[pol][pix_x][pix_y] = timesmp;//
+	const int max_scale = 1;
+	// only check if not too close to border
+	const int cs = max_scale*20;
+	if (pix_x < cs || pix_x >= sensor_width_-cs ||
+			pix_y < cs || pix_y >= sensor_height_-cs)
+	{
+		*found_streak = false;
+		return;
+	}
 
-  const int max_scale = 1;
+	const int pol = 0;
+	// update SAE
+	sae_[pol][pix_x][pix_y] = timesmp;
 
-  // only check if not too close to border
-  const int cs = max_scale*4;
-  if (pix_x < cs || pix_x >= sensor_width_-cs ||
-      pix_y < cs || pix_y >= sensor_height_-cs)
-  {
     *found_streak = false;
-  }
-
-  *found_streak = false;
 
 #if DEBUG
   std::cout << "Idx Inner Data SW is: " << std::endl;
@@ -620,7 +624,7 @@ int main ()
 	uint64_t data[eventCnt];
 	uint32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
 
-	testTimes = 5;
+	testTimes = 20;
 
 	for(int k = 0; k < testTimes; k++)
 	{
@@ -639,8 +643,8 @@ int main ()
 
 		for (int i = 0; i < eventCnt; i++)
 		{
-			x[i] = rand()%220 + 10;
-			y[i] = rand()%110 + 10;
+			x[i] = rand()%195 + 20;
+			y[i] = rand()%155 + 10;
 			pol[i] = rand()%2;
 //			idx = rand()%3;
 	//		x = 255;

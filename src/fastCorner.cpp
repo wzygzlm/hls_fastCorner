@@ -88,14 +88,13 @@ void convertInterface(ap_uint<TS_TYPE_BIT_WIDTH> inData[OUTER_SIZE], ap_uint<5> 
 			for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
 			{
 #pragma HLS UNROLL
-//				const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-//				ap_uint<8 + bitOffset> colIdx;
-//				// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-//				colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>((i + j) * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-//				colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-//
-//				tmpData[colIdx] = inData[i + j][yIndex];
-				tmpData[(i + j)*TS_TYPE_BIT_WIDTH + yIndex] = inData[i + j][yIndex];
+				const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+				ap_uint<8 + bitOffset> colIdx;
+				// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+				colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>((i + j) * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+				colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+
+				tmpData[colIdx] = inData[i + j][yIndex];
 			}
 		}
 	}
@@ -206,14 +205,13 @@ assert(size <= OUTER_SIZE);
 		for (uint8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
 		{
 #pragma HLS UNROLL
-//			const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-//			ap_uint<8 + bitOffset> colIdx;
-//			// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-//			colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(j * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-//			colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-//
-//			inData[j][yIndex] = tmpData[colIdx];
-			inData[j][yIndex] = tmpData[j * TS_TYPE_BIT_WIDTH + yIndex];
+			const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+			ap_uint<8 + bitOffset> colIdx;
+			// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+			colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(j * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+			colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+
+			inData[j][yIndex] = tmpData[colIdx];
 		}
 	}
 
@@ -760,14 +758,14 @@ ap_uint<TS_TYPE_BIT_WIDTH> readOneDataFromCol(col_pix_t colData, ap_uint<8> idx)
 	readWiderBitsLoop: for(int8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
 	{
 #pragma HLS UNROLL
-//		const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-//		ap_uint<8 + bitOffset> colIdx;
-//		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-//		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-//		colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-//
-//		retData[yIndex] = colData[colIdx];
-		retData[yIndex] = colData[TS_TYPE_BIT_WIDTH*idx + yIndex];
+		const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+		ap_uint<8 + bitOffset> colIdx;
+		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+		colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+
+		retData[yIndex] = colData[colIdx];
+//		retData[yIndex] = colData[ap_uint<TS_TYPE_BIT_WIDTH>_BIT_WIDTH*idx + yIndex];
 	}
 	return retData;
 }
@@ -778,14 +776,13 @@ void writeOneDataToCol(col_pix_t *colData, ap_uint<8> idx, ap_uint<TS_TYPE_BIT_W
 	writeWiderBitsLoop: for(int8_t yIndex = 0; yIndex < TS_TYPE_BIT_WIDTH; yIndex++)
 	{
 #pragma HLS UNROLL
-//		const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
-//		ap_uint<8 + bitOffset> colIdx;
-//		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
-//		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
-//		colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
-//
-//		(*colData)[colIdx] = toWriteData[yIndex];
-		(*colData)[TS_TYPE_BIT_WIDTH*idx + yIndex] = toWriteData[yIndex];
+		const int bitOffset = LOG_TS_TYPE_BIT_WIDTH;   // This value should be equal to log(TS_TYPE_BIT_WIDTH)
+		ap_uint<8 + bitOffset> colIdx;
+		// Concatenate and bit shift rather than multiple and accumulation (MAC) can save area.
+		colIdx.range(8 + bitOffset - 1, bitOffset) = ap_uint<8 + bitOffset>(idx * TS_TYPE_BIT_WIDTH).range(8 + bitOffset - 1, bitOffset);
+		colIdx.range(bitOffset - 1, 0) = ap_uint<bitOffset>(yIndex);
+
+		(*colData)[colIdx] = toWriteData[yIndex];
 	}
 }
 
@@ -857,15 +854,40 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
 	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 32;
 
-	xStream << xWr;
-	yStream << yWr;
-	tsStream << ts;
-
-	xStream << xWr;
-	yStream << yWr;
-	tsStream << ts;
-
 	packetEventDataStream << apUint17_t(xWr.to_int() + (yWr.to_int() << 8) + (pol << 16));
+
+	// Make this event an invalid event
+	if(pol == 0)
+	{
+		xWr = 0;
+		yWr = 0;
+		ts = 0;
+	}
+
+	// TODO: Removed the hardcoded code
+	const int max_scale = 1;
+	// only check if not too close to border
+	const int cs = max_scale*20;
+	// Make this event an invalid event
+	if (xWr < 20 || xWr >= 240-20 ||
+			yWr < 20 || yWr >= 180-20)
+	{
+		xWr = 0;
+		yWr = 0;
+		ts = 0;
+	}
+
+	xWr -= 16;
+	yWr -= 16;
+
+	xStream << xWr;
+	yStream << yWr;
+	tsStream << ts;
+
+	xStream << xWr;
+	yStream << yWr;
+	tsStream << ts;
+
 }
 
 void initStageStream(hls::stream< ap_uint<2> >  &stageInStream, hls::stream< ap_uint<2> >  &stageOutStream)
@@ -1080,6 +1102,12 @@ void rwSAEStream(hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls
 
 	ap_uint<2> stage = 0;
 	stage = stageStream.read();
+
+	// Invalid event
+	if(x == 0 || y == 0)
+	{
+		stage = 0;
+	}
 
 	if(stage == 0)
 	{
@@ -2052,14 +2080,13 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlic
 			initStageStream(stageInStream, stageOutStream);
 			rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
 
-//			std::cout << "Idx stage " << i/2 << " Data HW is: " << std::endl;
+//			std::cout << "Idx stage " << stage[loop] << " Data HW is: " << std::endl;
 //			for (int i = 0; i < size; i++)
 //			{
 //				std::cout << (int)outer[i]<< "\t";
 //			}
 //			std::cout << std::endl;
-//		    sortedIdxData<2>(outer, size, idxData);
-
+		//    sortedIdxData<2>(outer, size, idxData);
 			convertInterface<4>(outer, size, inStream);
 			sortedIdxStream<2>(inStream, size, idxData);
 			checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
