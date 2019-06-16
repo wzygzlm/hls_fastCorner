@@ -447,11 +447,16 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
 		return;
 	}
 
+	if(pix_y == 159)
+	{
+		int tmp = 0;
+	}
+
 	const int max_scale = 1;
 	// only check if not too close to border
 	const int cs = max_scale*20;
-	if (pix_x < cs || pix_x >= sensor_width_-cs ||
-			pix_y < cs || pix_y >= sensor_height_-cs)
+	if (pix_x < cs || pix_x >= sensor_width_-cs - 4 ||
+			pix_y < cs || pix_y >= sensor_height_-cs -4)
 	{
 		*found_streak = false;
 		return;
@@ -634,18 +639,15 @@ int main ()
 
 		for (int i = 0; i < eventCnt; i++)
 		{
-			// Ts is set to 30bits on hardware,
-		    // so we sohould guarantee ts is not out of range.
-			ts[i]  = rand()%0x3fffffff;
-
+			ts[i]  = rand();
 		}
 		sort(ts, ts+eventCnt);
 
 		for (int i = 0; i < eventCnt; i++)
 		{
-			x[i] = rand()%195 + 20;
-			y[i] = rand()%155 + 10;
-			pol[i] = rand()%2;
+			x[i] = rand()%240;
+			y[i] = rand()%180;
+			pol[i] = 1;
 //			idx = rand()%3;
 	//		x = 255;
 	//		y = 240;
@@ -657,7 +659,10 @@ int main ()
 //			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
 		}
 
-
+		if (k == 17)
+		{
+			int tmp = 0;
+		}
 		parseEventsSW(data, eventCnt, eventSliceSW);
 		parseEventsHW(data, eventCnt, eventSlice);
 
@@ -672,6 +677,7 @@ int main ()
 				cout << "x : " << int(x[j]) << endl;
 				cout << "y : " << int(y[j]) << endl;
 				cout << "ts : " << ts[j] << endl;
+				cout << "pol : " << pol[j] << endl;
 
 				err_cnt++;
 				cout << "Mismatch detected on TEST " << k << " and the mismatch index is: " << j << endl;

@@ -854,31 +854,30 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
 	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 32;
 
-	packetEventDataStream << apUint17_t(xWr.to_int() + (yWr.to_int() << 8) + (pol << 16));
+	apUint17_t tmpOutput;
+	tmpOutput[16] = ap_uint<1>(pol);
+	tmpOutput.range(15, 8) = yWr;
+	tmpOutput.range(7, 0) = xWr;
+	packetEventDataStream << tmpOutput;
 
-	// Make this event an invalid event
-	if(pol == 0)
-	{
-		xWr = 0;
-		yWr = 0;
-		ts = 0;
-	}
-
-	// TODO: Removed the hardcoded code
+	// TODO: Removed the hardcoded code invalid event
 	const int max_scale = 1;
 	// only check if not too close to border
 	const int cs = max_scale*20;
 	// Make this event an invalid event
-	if (xWr < 20 || xWr >= 240-20 ||
-			yWr < 20 || yWr >= 180-20)
+	// The maximum range of x is [0, 200), 4 is the corner block range.
+	if (xWr < 20 || xWr >= 240-20-4 ||
+			yWr < 20 || yWr >= 180-20-4 || pol == 0)
 	{
 		xWr = 0;
 		yWr = 0;
 		ts = 0;
 	}
-
-	xWr -= 16;
-	yWr -= 16;
+	else
+	{
+		xWr -= 16;
+		yWr -= 16;
+	}
 
 	xStream << xWr;
 	yStream << yWr;
@@ -1106,7 +1105,7 @@ void rwSAEStream(hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls
 	// Invalid event
 	if(x == 0 || y == 0)
 	{
-		stage = 0;
+		stage = 2;
 	}
 
 	if(stage == 0)
@@ -2017,13 +2016,13 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 	// Only output the result at the last part of the event processing.
 //	if(glFeedbackCounter%2 == 1)
 //	{
-		apUint17_t tmp1 = apUint17_t(packetEventDataStream.read());
-		ap_uint<32> output = tmp1;
-		ap_uint<1> isCornerStage0 = isFinalCornerStream.read();
-		ap_uint<1> isCornerStage1 = isFinalCornerStream.read();
-		ap_uint<1> isCorner = isCornerStage0 & isCornerStage1;
-		output[31] = isCorner;
-		*eventSlice++ = output.to_int();
+	apUint17_t tmp1 = apUint17_t(packetEventDataStream.read());
+	ap_uint<32> output = tmp1;
+	ap_uint<1> isCornerStage0 = isFinalCornerStream.read();
+	ap_uint<1> isCornerStage1 = isFinalCornerStream.read();
+	ap_uint<1> isCorner = isCornerStage0 & isCornerStage1;
+	output[31] = isCorner;
+	*eventSlice++ = output.to_int();
 //	}
 }
 
