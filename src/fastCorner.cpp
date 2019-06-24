@@ -2050,6 +2050,8 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlic
 	ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
 
 	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+
 	ap_uint<5> size;
 #pragma HLS STREAM variable=size depth=3 dim=1
 
