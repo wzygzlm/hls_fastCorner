@@ -2039,7 +2039,12 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 	output.range(23,16) = tmpOutput.range(15,8);
 	output.range(31,24) = tmpOutput.range(7,0);
 
-	output.range(63, 32) = tmp1.range(48, 17);
+//	output.range(63, 32) = tmp1.range(48, 17);
+
+	output.range(39, 32) = tmp1.range(48, 41);
+	output.range(47, 40) = tmp1.range(40, 33);
+	output.range(55, 48) = tmp1.range(32, 25);
+	output.range(63, 56) = tmp1.range(24, 17);
 
 	*eventSlice++ = output.to_uint64();
 //	}
