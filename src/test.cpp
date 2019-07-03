@@ -447,11 +447,6 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
 		return;
 	}
 
-	if(pix_y == 159)
-	{
-		int tmp = 0;
-	}
-
 	const int max_scale = 1;
 	// only check if not too close to border
 	const int cs = max_scale*20;
@@ -589,7 +584,7 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
   //return *found_streak;
 }
 
-void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint32_t *eventSlice)
+void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint64_t *eventSlice)
 {
 	for (int i = 0; i < eventsArraySize; i++)
 	{
@@ -613,15 +608,16 @@ void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint32_t *eve
 
 		ap_uint<32> tmpOutput = (0 << 31) + (y << 22) + (x << 12)  + (pol << 11) + isCorner;
 
-		ap_uint<32> output;
+		ap_uint<64> output;
 
 		// Changed to small endian mode to send it to jAER
 		output.range(7,0) = tmpOutput.range(31,24);
 		output.range(15,8) = tmpOutput.range(23,16);
 		output.range(23,16) = tmpOutput.range(15,8);
 		output.range(31,24) = tmpOutput.range(7,0);
+		output.range(63, 32) = ap_uint<32>(ts);
 
-		*eventSlice++ = output.to_uint();
+		*eventSlice++ = output.to_uint64();
 	}
 }
 
@@ -637,7 +633,7 @@ int main ()
 	uint64_t ts[eventCnt];
 	bool pol[eventCnt];
 	uint64_t data[eventCnt];
-	uint32_t eventSlice[eventCnt], eventSliceSW[eventCnt];
+	uint64_t eventSlice[eventCnt], eventSliceSW[eventCnt];
 
 	testTimes = 10;
 

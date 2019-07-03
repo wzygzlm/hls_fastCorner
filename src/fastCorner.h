@@ -17,6 +17,7 @@
 #define POLARITY_X_ADDR_SHIFT 17
 #define POLARITY_X_ADDR_MASK 0x000001FF      //  Reduce mask bit width to reduce LUTs
 
+typedef ap_uint<49> apUint49_t;
 typedef ap_uint<17> apUint17_t;
 typedef ap_uint<15> apUint15_t;
 typedef ap_uint<6> apUint6_t;
@@ -68,6 +69,6 @@ void testFromTsDataToOuterCornerHW(ap_uint<TS_TYPE_BIT_WIDTH> inputRawData[OUTER
 void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner);
 void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner);
 void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> *isCorner);
-void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, uint32_t *eventSlice);
+void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, uint64_t *eventSlice);
 
 #endif

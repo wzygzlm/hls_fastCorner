@@ -845,7 +845,7 @@ void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
 	saeHW[0][y/RESHAPE_FACTOR][x] = tmpData;
 }
 
-void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream<apUint17_t> &packetEventDataStream)
+void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream<apUint49_t> &packetEventDataStream)
 {
 #pragma HLS PIPELINE
 	uint64_t tmp = *data;
@@ -854,10 +854,11 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
 	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 32;
 
-	apUint17_t tmpOutput;
+	apUint49_t tmpOutput;
 	tmpOutput[16] = ap_uint<1>(pol);
 	tmpOutput.range(15, 8) = yWr;
 	tmpOutput.range(7, 0) = xWr;
+	tmpOutput.range(48, 17) = ts.range(31, 0);
 	packetEventDataStream << tmpOutput;
 
 	// TODO: Removed the hardcoded code invalid event
@@ -2010,14 +2011,14 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 	}
 }
 
-void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<apUint17_t> &packetEventDataStream, uint32_t *eventSlice)
+void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<apUint49_t> &packetEventDataStream, uint64_t *eventSlice)
 {
 #pragma HLS INLINE
 	// Only output the result at the last part of the event processing.
 //	if(glFeedbackCounter%2 == 1)
 //	{
-	apUint17_t tmp1 = apUint17_t(packetEventDataStream.read());
-	ap_uint<32> output = tmp1;
+	apUint49_t tmp1 = apUint49_t(packetEventDataStream.read());
+	ap_uint<64> output = tmp1.range(16, 0);
 	ap_uint<1> isCornerStage0 = isFinalCornerStream.read();
 	ap_uint<1> isCornerStage1 = isFinalCornerStream.read();
 	ap_uint<1> isCorner = isCornerStage0 & isCornerStage1;
@@ -2038,11 +2039,13 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 	output.range(23,16) = tmpOutput.range(15,8);
 	output.range(31,24) = tmpOutput.range(7,0);
 
-	*eventSlice++ = output.to_uint();
+	output.range(63, 32) = tmp1.range(48, 17);
+
+	*eventSlice++ = output.to_uint64();
 //	}
 }
 
-void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlice)
+void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint64_t *eventSlice)
 {
 #pragma HLS DATAFLOW
 
@@ -2059,7 +2062,7 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlic
     hls::stream<Y_TYPE>  yStream("yStream");
     hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
 
-	hls::stream<apUint17_t> pktEventDataStream("pktEventDataStream");
+	hls::stream<apUint49_t> pktEventDataStream("pktEventDataStream");
 #pragma HLS STREAM variable=pktEventDataStream depth=3 dim=1
 #pragma HLS RESOURCE variable=pktEventDataStream core=FIFO_SRL
 
@@ -2117,5 +2120,4 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint32_t *eventSlic
 #pragma HLS LOOP_TRIPCOUNT min=1 max=5000
 		outputResult(isFinalCornerStream, pktEventDataStream, eventSlice++);
 	}
-
 }
