@@ -2126,3 +2126,63 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint64_t *eventSlic
 		outputResult(isFinalCornerStream, pktEventDataStream, eventSlice++);
 	}
 }
+
+void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<64> > &tsStreamIn,
+		hls::stream<X_TYPE> &xStreamOut, hls::stream<Y_TYPE> &yStreamOut, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStreamOut)
+{
+#pragma HLS PIPELINE
+	ap_uint<16> x;
+	ap_uint<16> y;
+	ap_uint<64> ts;
+
+	xStreamIn >> x;
+	yStreamIn >> y;
+	tsStreamIn >> ts;
+
+	xStreamOut << (X_TYPE)x;
+	yStreamOut << (Y_TYPE)y;
+	tsStreamOut << (ap_uint<TS_TYPE_BIT_WIDTH>)ts;
+}
+
+
+void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<64> > &tsStreamIn,
+		hls::stream< ap_uint<1> > &isFinalCornerStream)
+{
+#pragma HLS INTERFACE axis register both port=isFinalCornerStream
+#pragma HLS INTERFACE axis register both port=tsStreamIn
+#pragma HLS INTERFACE axis register both port=yStreamIn
+#pragma HLS INTERFACE axis register both port=xStreamIn
+#pragma HLS DATAFLOW
+	ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+
+	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+
+	ap_uint<5> size;
+#pragma HLS STREAM variable=size depth=3 dim=1
+
+    hls::stream<X_TYPE>  xStream("xStream");
+#pragma HLS RESOURCE variable=xStream core=FIFO_SRL
+    hls::stream<Y_TYPE>  yStream("yStream");
+#pragma HLS RESOURCE variable=yStream core=FIFO_SRL
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
+#pragma HLS RESOURCE variable=tsStream core=FIFO_SRL
+
+	hls::stream< ap_uint<2> >  stageInStream("stageInStream");
+#pragma HLS RESOURCE variable=stageInStream core=FIFO_SRL
+	hls::stream< ap_uint<2> >  stageOutStream("stageOutStream");
+#pragma HLS RESOURCE variable=stageOutStream core=FIFO_SRL
+
+
+    ap_uint<5> idxData[OUTER_SIZE];
+    ap_uint<1> isStageCorner;
+
+	truncateStream(xStreamIn, yStreamIn, tsStreamIn, xStream, yStream, tsStream);
+	initStageStream(stageInStream, stageOutStream);
+	rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
+	convertInterface<4>(outer, size, inStream);
+	sortedIdxStream<2>(inStream, size, idxData);
+	checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
+	feedbackStream(isStageCorner, stageInStream, isFinalCornerStream);
+
+}

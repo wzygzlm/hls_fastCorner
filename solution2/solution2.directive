@@ -70,14 +70,25 @@
                 <option name="max" value="16"/>
             </pragma>
         </directive>
-        <directive functionName="fastCornerHW" label="" functionLabel="">
-            <pragma name="DATAFLOW"/>
-        </directive>
         <directive functionName="rwSAE" label="" functionLabel="">
             <pragma name="ALLOCATION">
                 <option name="instances" value="sub" positionalBoolean="4"/>
                 <option name="limit" value="2"/>
                 <option name="operation" value="" positionalBoolean="type"/>
+            </pragma>
+        </directive>
+        <directive functionName="parseEventsHW" label="" functionLabel="">
+            <pragma name="INTERFACE">
+                <option name="ap_fifo" value="" positionalBoolean="mode"/>
+                <option name="depth" value="5000"/>
+                <option name="port" value="data" positionalBoolean="4"/>
+            </pragma>
+        </directive>
+        <directive functionName="parseEventsHW" label="" functionLabel="">
+            <pragma name="INTERFACE">
+                <option name="ap_fifo" value="" positionalBoolean="mode"/>
+                <option name="depth" value="5000"/>
+                <option name="port" value="eventSlice" positionalBoolean="4"/>
             </pragma>
         </directive>
     </sourceFile>
