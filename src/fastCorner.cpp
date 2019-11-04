@@ -2132,7 +2132,7 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint64_t *eventSlic
  */
 static ap_uint<32> glConfig;
 void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<1> > &polStreamIn, hls::stream< ap_uint<64> > &tsStreamIn,
-		hls::stream<X_TYPE> &xStreamOut, hls::stream<Y_TYPE> &yStreamOut, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStreamOut, hls::stream< ap_uint<64> > &packetEventDataStream)
+		hls::stream<X_TYPE> &xStreamOut, hls::stream<Y_TYPE> &yStreamOut, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStreamOut, hls::stream< ap_uint<96> > &packetEventDataStream)
 {
 #pragma HLS PIPELINE
 	ap_uint<16> x;
@@ -2145,11 +2145,11 @@ void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<
 	tsStreamIn >> ts;
 	polStreamIn >> pol;
 
-	ap_uint<64> tmpOutput;
+	ap_uint<96> tmpOutput;
 	tmpOutput[32] = ap_uint<1>(pol);
 	tmpOutput.range(31, 16) = y;
 	tmpOutput.range(15, 0) = x;
-	tmpOutput.range(63, 33) = ts.range(31, 0);
+	tmpOutput.range(95, 33) = ts.range(62, 0);
 	packetEventDataStream << tmpOutput;
 
 	xStreamOut << (X_TYPE)x;
@@ -2157,13 +2157,13 @@ void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<
 	tsStreamOut << (ap_uint<TS_TYPE_BIT_WIDTH>)ts;
 }
 
-void combineOutputStream(hls::stream< ap_uint<64> > &packetEventDataStream, hls::stream< ap_uint<1> > &isFinalCornerStream,
+void combineOutputStream(hls::stream< ap_uint<96> > &packetEventDataStream, hls::stream< ap_uint<1> > &isFinalCornerStream,
 						hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut,
 						hls::stream< ap_uint<1> > &polStreamOut,
-						hls::stream< ap_uint<32> > &tsStreamOut, hls::stream< ap_uint<8> > &custDataStreamOut)
+						hls::stream< ap_uint<64> > &tsStreamOut, hls::stream< ap_uint<8> > &custDataStreamOut)
 {
 #pragma HLS PIPELINE
-	ap_uint<64> tmpOutput;
+	ap_uint<96> tmpOutput;
 	packetEventDataStream >> tmpOutput;
 	ap_uint<16> x;
 	ap_uint<16> y;
@@ -2173,7 +2173,7 @@ void combineOutputStream(hls::stream< ap_uint<64> > &packetEventDataStream, hls:
 	y = tmpOutput.range(31, 16);
 	x = tmpOutput.range(15, 0);
 	pol = tmpOutput[32];
-	ts.range(31, 0) = tmpOutput.range(63, 33);
+	ts.range(62, 0) = tmpOutput.range(95, 33);
 
 	ap_uint<1> cornerRet;
 	isFinalCornerStream >> cornerRet;
@@ -2203,7 +2203,7 @@ void combineOutputStream(hls::stream< ap_uint<64> > &packetEventDataStream, hls:
 }
 
 void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<64> > &tsStreamIn, hls::stream< ap_uint<1> > &polStreamIn,
-		hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut, hls::stream< ap_uint<32> > &tsStreamOut, hls::stream< ap_uint<1> > &polStreamOut,
+		hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut, hls::stream< ap_uint<64> > &tsStreamOut, hls::stream< ap_uint<1> > &polStreamOut,
 		hls::stream< ap_uint<8> > &pixelDataStream,
 		ap_uint<32> config)
 {
@@ -2234,7 +2234,7 @@ void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_u
     hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
 #pragma HLS RESOURCE variable=tsStream core=FIFO_SRL
 
-    hls::stream< ap_uint<64> > pktEventDataStream("pktEventDataStream");
+    hls::stream< ap_uint<96> > pktEventDataStream("pktEventDataStream");
 #pragma HLS STREAM variable=pktEventDataStream depth=3 dim=1
 #pragma HLS RESOURCE variable=pktEventDataStream core=FIFO_SRL
 
