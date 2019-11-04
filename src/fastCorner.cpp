@@ -2130,6 +2130,7 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint64_t *eventSlic
 /*
  * Following modules are for chip directly on board.
  */
+static ap_uint<32> glConfig;
 void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<1> > &polStreamIn, hls::stream< ap_uint<64> > &tsStreamIn,
 		hls::stream<X_TYPE> &xStreamOut, hls::stream<Y_TYPE> &yStreamOut, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStreamOut, hls::stream< ap_uint<64> > &packetEventDataStream)
 {
@@ -2180,17 +2181,33 @@ void combineOutputStream(hls::stream< ap_uint<64> > &packetEventDataStream, hls:
 	ap_uint<8> pixelData;
 	pixelData = (cornerRet == 1) ? 0xaa : 0;
 
-	xStreamOut << x;
-	yStreamOut << y;
-	polStreamOut << pol;
-	tsStreamOut << ts;
-	custDataStreamOut << pixelData;
+	if(glConfig[0])                   // This is filter mode.
+	{
+		if(cornerRet == 1)
+		{
+			xStreamOut << x;
+			yStreamOut << y;
+			polStreamOut << pol;
+			tsStreamOut << ts;
+			custDataStreamOut << pixelData;
+		}
+	}
+	else                           // This is forward mode.
+	{
+		xStreamOut << x;
+		yStreamOut << y;
+		polStreamOut << pol;
+		tsStreamOut << ts;
+		custDataStreamOut << pixelData;
+	}
 }
 
 void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<64> > &tsStreamIn, hls::stream< ap_uint<1> > &polStreamIn,
 		hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut, hls::stream< ap_uint<32> > &tsStreamOut, hls::stream< ap_uint<1> > &polStreamOut,
-		hls::stream< ap_uint<8> > &pixelDataStream)
+		hls::stream< ap_uint<8> > &pixelDataStream,
+		ap_uint<32> config)
 {
+#pragma HLS INTERFACE s_axilite port=config bundle=config
 #pragma HLS INTERFACE axis register both port=tsStreamOut
 #pragma HLS INTERFACE axis register both port=polStreamOut
 #pragma HLS INTERFACE axis register both port=yStreamOut
@@ -2231,6 +2248,7 @@ void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_u
     ap_uint<5> idxData[OUTER_SIZE];
     ap_uint<1> isStageCorner;
 
+    glConfig = config;
 	truncateStream(xStreamIn, yStreamIn, polStreamIn, tsStreamIn, xStream, yStream, tsStream, pktEventDataStream);
 	initStageStream(stageInStream, stageOutStream);
 	rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
