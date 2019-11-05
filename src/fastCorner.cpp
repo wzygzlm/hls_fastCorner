@@ -2131,6 +2131,14 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint64_t *eventSlic
  * Following modules are for chip directly on board.
  */
 static ap_uint<32> glConfig;
+typedef struct
+{
+	uint64_t inEventsNum;
+	uint64_t outEventsNum;
+	uint64_t cornerEventsNum;
+} status_t;
+static status_t glStatus;
+static uint64_t inEventsNum;
 void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<1> > &polStreamIn, hls::stream< ap_uint<64> > &tsStreamIn,
 		hls::stream<X_TYPE> &xStreamOut, hls::stream<Y_TYPE> &yStreamOut, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStreamOut, hls::stream< ap_uint<96> > &packetEventDataStream)
 {
@@ -2155,7 +2163,12 @@ void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<
 	xStreamOut << (X_TYPE)x;
 	yStreamOut << (Y_TYPE)y;
 	tsStreamOut << (ap_uint<TS_TYPE_BIT_WIDTH>)ts;
+
+	inEventsNum++;
+	glStatus.inEventsNum = inEventsNum;
 }
+
+static uint64_t outEventsNum, cornerEventsNum;
 
 void combineOutputStream(hls::stream< ap_uint<96> > &packetEventDataStream, hls::stream< ap_uint<1> > &isFinalCornerStream,
 						hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut,
@@ -2190,6 +2203,7 @@ void combineOutputStream(hls::stream< ap_uint<96> > &packetEventDataStream, hls:
 			polStreamOut << pol;
 			tsStreamOut << ts;
 			custDataStreamOut << pixelData;
+
 		}
 	}
 	else                           // This is forward mode.
@@ -2200,13 +2214,22 @@ void combineOutputStream(hls::stream< ap_uint<96> > &packetEventDataStream, hls:
 		tsStreamOut << ts;
 		custDataStreamOut << pixelData;
 	}
+
+	if(cornerRet == 1)
+	{
+		cornerEventsNum++;
+	}
+	outEventsNum++;
+	glStatus.cornerEventsNum = cornerEventsNum;
+	glStatus.outEventsNum = outEventsNum;
 }
 
 void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<64> > &tsStreamIn, hls::stream< ap_uint<1> > &polStreamIn,
 		hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut, hls::stream< ap_uint<64> > &tsStreamOut, hls::stream< ap_uint<1> > &polStreamOut,
 		hls::stream< ap_uint<8> > &pixelDataStream,
-		ap_uint<32> config)
+		ap_uint<32> config, status_t *status)
 {
+#pragma HLS INTERFACE s_axilite port=status bundle=config
 #pragma HLS INTERFACE s_axilite port=config bundle=config
 #pragma HLS INTERFACE axis register both port=tsStreamOut
 #pragma HLS INTERFACE axis register both port=polStreamOut
@@ -2249,6 +2272,7 @@ void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_u
     ap_uint<1> isStageCorner;
 
     glConfig = config;
+
 	truncateStream(xStreamIn, yStreamIn, polStreamIn, tsStreamIn, xStream, yStream, tsStream, pktEventDataStream);
 	initStageStream(stageInStream, stageOutStream);
 	rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
@@ -2258,4 +2282,5 @@ void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_u
 	feedbackStream(isStageCorner, stageInStream, isFinalCornerStream);
 	combineOutputStream(pktEventDataStream, isFinalCornerStream, xStreamOut, yStreamOut, polStreamOut, tsStreamOut, pixelDataStream);
 
+	*status = glStatus;
 }
