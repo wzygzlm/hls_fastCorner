@@ -2180,7 +2180,7 @@ void combineOutputStream(hls::stream< ap_uint<96> > &packetEventDataStream, hls:
 	packetEventDataStream >> tmpOutput;
 	ap_uint<16> x;
 	ap_uint<16> y;
-	ap_uint<32> ts;
+	ap_uint<64> ts;
 	ap_uint<1> pol;
 
 	y = tmpOutput.range(31, 16);
@@ -2196,7 +2196,7 @@ void combineOutputStream(hls::stream< ap_uint<96> > &packetEventDataStream, hls:
 
 	if(glConfig[0])                   // This is filter mode.
 	{
-		if(cornerRet == 1)
+		if(cornerRet == 1 || ts.range(14,0) == 0) // time wrapping events should not be skipped
 		{
 			xStreamOut << x;
 			yStreamOut << y;
