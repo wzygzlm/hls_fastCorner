@@ -592,7 +592,7 @@ void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint64_t *eve
 		uint32_t x = ((tmp) >> POLARITY_X_ADDR_SHIFT) & POLARITY_X_ADDR_MASK;
 		uint32_t y = ((tmp) >> POLARITY_Y_ADDR_SHIFT) & POLARITY_Y_ADDR_MASK;
 		bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
-		int ts = tmp >> 32;
+		ap_uint<32> ts = tmp >> 32;
 #if DEBUG
 		cout << "x : " << x << endl;
 		cout << "y : " << y << endl;
@@ -615,7 +615,8 @@ void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint64_t *eve
 		output.range(15,8) = tmpOutput.range(23,16);
 		output.range(23,16) = tmpOutput.range(15,8);
 		output.range(31,24) = tmpOutput.range(7,0);
-		output.range(63, 32) = ap_uint<32>(ts);
+
+		output.range(39, 32) = ts;
 
 		*eventSlice++ = output.to_uint64();
 	}
@@ -670,7 +671,8 @@ int main ()
 
 		for (int j = 0; j < eventCnt; j++)
 		{
-			if (eventSlice[j] != eventSliceSW[j])
+			// Important info is only contained in the lower 32bits
+			if (ap_uint<64>(eventSlice[j]).range(31, 0) != ap_uint<64>(eventSliceSW[j]).range(31, 0))
 			{
 				std::cout << "eventSliceSW is: " << eventSliceSW[j] << std::endl;
 				std::cout << "eventSlice is: " << eventSlice[j] << std::endl;
