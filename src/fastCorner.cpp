@@ -699,7 +699,7 @@ void feedbackStream(ap_uint<1> isStageCorner, hls::stream< ap_uint<2> >  &stageS
 	// Only write the stream at the first part of the event processing.
 	if(glFeedbackCounter%2 == 0)
 	{
-//		stageStream << outputStage;
+		stageStream << outputStage;
 		isFinalCornerStream << isStageCorner;
 	}
 	else
@@ -902,12 +902,12 @@ void initStageStream(hls::stream< ap_uint<2> >  &stageInStream, hls::stream< ap_
 	}
     else
     {
-        // stageIn = stageInStream.read();
-    	stageIn = 1;
+    	stageIn = stageInStream.read();
+//    	stageIn = 1;
     }
 	glStage = stageIn;
 
-	// This counter is used to syncronize this module and the feedback module.
+	// This counter is used to synchronize this module and the feedback module.
 	// Make them have the common adder source.
 	glFeedbackCounter = glInitCounter;
     glInitCounter++;
@@ -932,7 +932,7 @@ void initStageStreamAndXandY(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, 
     }
 	glStage = stageIn;
 
-	// This counter is used to syncronize this module and the feedback module.
+	// This counter is used to synchronize this module and the feedback module.
 	// Make them have the common adder source.
 	glFeedbackCounter = glInitCounter;
     glInitCounter++;
