@@ -603,8 +603,8 @@ void parseEventsSW(uint64_t * dataStream, int32_t eventsArraySize, uint64_t *eve
 
 		FastDetectorisFeature(x, y, ts, pol, &isCorner);
 
-		x = 239 - x;
-		y = 179 - y;
+		x = sensor_width_ - 1 - x;
+		y = sensor_height_ - 1 - y;
 
 		ap_uint<32> tmpOutput = (0 << 31) + (y << 22) + (x << 12)  + (pol << 11) + isCorner;
 
@@ -629,7 +629,8 @@ int main ()
     int total_err_cnt = 0;
 	int retval=0;
 	/******************* Test parseEvents module from random value**************************/
-	int32_t eventCnt = 5000;
+	srand(3);
+	int32_t eventCnt = 6000;
 	uint8_t x[eventCnt], y[eventCnt];
 	uint64_t ts[eventCnt];
 	bool pol[eventCnt];

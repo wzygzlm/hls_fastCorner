@@ -80,14 +80,14 @@
         <directive functionName="parseEventsHW" label="" functionLabel="">
             <pragma name="INTERFACE">
                 <option name="ap_fifo" value="" positionalBoolean="mode"/>
-                <option name="depth" value="5000"/>
+                <option name="depth" value="6000"/>
                 <option name="port" value="data" positionalBoolean="4"/>
             </pragma>
         </directive>
         <directive functionName="parseEventsHW" label="" functionLabel="">
             <pragma name="INTERFACE">
                 <option name="ap_fifo" value="" positionalBoolean="mode"/>
-                <option name="depth" value="5000"/>
+                <option name="depth" value="6000"/>
                 <option name="port" value="eventSlice" positionalBoolean="4"/>
             </pragma>
         </directive>

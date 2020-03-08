@@ -15,5 +15,5 @@ set_directive_loop_tripcount -min 4 -max 4 "FastDetectorisFeature/FastDetectoris
 set_directive_array_reshape -type complete -dim 1 "min/label1/label1" inArr
 set_directive_loop_tripcount -min 0 -max 16 "insertion_sort/L2"
 set_directive_allocation -limit 2 -type operation "rwSAE" sub
-set_directive_interface -mode ap_fifo -depth 5000 "parseEventsHW" data
-set_directive_interface -mode ap_fifo -depth 5000 "parseEventsHW" eventSlice
+set_directive_interface -mode ap_fifo -depth 6000 "parseEventsHW" data
+set_directive_interface -mode ap_fifo -depth 6000 "parseEventsHW" eventSlice
