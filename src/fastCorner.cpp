@@ -2131,12 +2131,6 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint64_t *eventSlic
  * Following modules are for chip directly on board.
  */
 static ap_uint<32> glConfig;
-typedef struct
-{
-	uint64_t inEventsNum;
-	uint64_t outEventsNum;
-	uint64_t cornerEventsNum;
-} status_t;
 static status_t glStatus;
 static uint64_t inEventsNum;
 void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<1> > &polStreamIn, hls::stream< ap_uint<64> > &tsStreamIn,
@@ -2159,6 +2153,29 @@ void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<
 	tmpOutput.range(15, 0) = x;
 	tmpOutput.range(95, 33) = ts.range(62, 0);
 	packetEventDataStream << tmpOutput;
+
+	// TODO: Removed the hardcoded code invalid event
+	const int max_scale = 1;
+	// only check if not too close to border
+	const int cs = max_scale*20;
+	// Make this event an invalid event
+	// The maximum range of x is [0, 200), 4 is the corner block range.
+	if (x < 20 || x >= 240-20-4 ||
+			y < 20 || y >= 180-20-4 || pol == 0)
+	{
+		x = 0;
+		y = 0;
+		ts = 0;
+	}
+	else
+	{
+		x -= 16;
+		y -= 16;
+	}
+
+	xStreamOut << (X_TYPE)x;
+	yStreamOut << (Y_TYPE)y;
+	tsStreamOut << (ap_uint<TS_TYPE_BIT_WIDTH>)ts;
 
 	xStreamOut << (X_TYPE)x;
 	yStreamOut << (Y_TYPE)y;
@@ -2188,8 +2205,9 @@ void combineOutputStream(hls::stream< ap_uint<96> > &packetEventDataStream, hls:
 	pol = tmpOutput[32];
 	ts.range(62, 0) = tmpOutput.range(95, 33);
 
-	ap_uint<1> cornerRet;
-	isFinalCornerStream >> cornerRet;
+	ap_uint<1> isCornerStage0 = isFinalCornerStream.read();
+	ap_uint<1> isCornerStage1 = isFinalCornerStream.read();
+	ap_uint<1> cornerRet = isCornerStage0 & isCornerStage1;
 
 	ap_uint<8> pixelData;
 	pixelData = (cornerRet == 1) ? 0xaa : 0;
@@ -2232,6 +2250,72 @@ void combineOutputStream(hls::stream< ap_uint<96> > &packetEventDataStream, hls:
 	glStatus.cornerEventsNum = cornerEventsNum;
 	glStatus.outEventsNum = outEventsNum;
 }
+// This one is the same EVFastCornerStream, the only difference is that this is used for
+// C/RTL simulation because C/RTL does not support AXI4 LITE ports.
+void EVFastCornerStreamNoAxiLite(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<64> > &tsStreamIn, hls::stream< ap_uint<1> > &polStreamIn,
+		hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut, hls::stream< ap_uint<64> > &tsStreamOut, hls::stream< ap_uint<1> > &polStreamOut,
+		hls::stream< ap_uint<10> > &custDataStreamOut,
+		ap_uint<32> config, status_t *status)
+{
+//#pragma HLS INTERFACE s_axilite port=status bundle=config
+//#pragma HLS INTERFACE s_axilite port=config bundle=config
+#pragma HLS INTERFACE axis register both port=tsStreamOut
+#pragma HLS INTERFACE axis register both port=polStreamOut
+#pragma HLS INTERFACE axis register both port=yStreamOut
+#pragma HLS INTERFACE axis register both port=xStreamOut
+#pragma HLS INTERFACE axis register both port=polStreamIn
+
+#pragma HLS INTERFACE axis register both port=custDataStreamOut
+#pragma HLS INTERFACE axis register both port=tsStreamIn
+#pragma HLS INTERFACE axis register both port=yStreamIn
+#pragma HLS INTERFACE axis register both port=xStreamIn
+#pragma HLS DATAFLOW
+	ap_uint<TS_TYPE_BIT_WIDTH> outer[OUTER_SIZE];
+
+	hls::stream< ap_uint<TS_TYPE_BIT_WIDTH * OUTER_SIZE> > inStream("dataStream");
+#pragma HLS RESOURCE variable=inStream core=FIFO_SRL
+
+	ap_uint<5> size;
+#pragma HLS STREAM variable=size depth=3 dim=1
+
+    hls::stream<X_TYPE>  xStream("xStream");
+#pragma HLS RESOURCE variable=xStream core=FIFO_SRL
+    hls::stream<Y_TYPE>  yStream("yStream");
+#pragma HLS RESOURCE variable=yStream core=FIFO_SRL
+    hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
+#pragma HLS RESOURCE variable=tsStream core=FIFO_SRL
+
+    hls::stream< ap_uint<96> > pktEventDataStream("pktEventDataStream");
+#pragma HLS STREAM variable=pktEventDataStream depth=3 dim=1
+#pragma HLS RESOURCE variable=pktEventDataStream core=FIFO_SRL
+
+	hls::stream< ap_uint<2> >  stageInStream("stageInStream");
+#pragma HLS RESOURCE variable=stageInStream core=FIFO_SRL
+	hls::stream< ap_uint<2> >  stageOutStream("stageOutStream");
+#pragma HLS RESOURCE variable=stageOutStream core=FIFO_SRL
+
+	hls::stream< ap_uint<1> > isFinalCornerStream("isFinalCornerStream");
+
+    ap_uint<5> idxData[OUTER_SIZE];
+    ap_uint<1> isStageCorner;
+
+    glConfig = config;
+
+    GetData: truncateStream(xStreamIn, yStreamIn, polStreamIn, tsStreamIn, xStream, yStream, tsStream, pktEventDataStream);
+    Processing: for(int i = 0; i < 2; i++)
+	{
+#pragma HLS DATAFLOW
+		initStageStream(stageInStream, stageOutStream);
+		rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
+		convertInterface<4>(outer, size, inStream);
+		sortedIdxStream<2>(inStream, size, idxData);
+		checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
+		feedbackStream(isStageCorner, stageInStream, isFinalCornerStream);
+	}
+    Output: combineOutputStream(pktEventDataStream, isFinalCornerStream, xStreamOut, yStreamOut, polStreamOut, tsStreamOut, custDataStreamOut);
+	*status = glStatus;
+}
+
 
 void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<64> > &tsStreamIn, hls::stream< ap_uint<1> > &polStreamIn,
 		hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut, hls::stream< ap_uint<64> > &tsStreamOut, hls::stream< ap_uint<1> > &polStreamOut,
@@ -2282,14 +2366,17 @@ void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_u
 
     glConfig = config;
 
-	truncateStream(xStreamIn, yStreamIn, polStreamIn, tsStreamIn, xStream, yStream, tsStream, pktEventDataStream);
-	initStageStream(stageInStream, stageOutStream);
-	rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
-	convertInterface<4>(outer, size, inStream);
-	sortedIdxStream<2>(inStream, size, idxData);
-	checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
-	feedbackStream(isStageCorner, stageInStream, isFinalCornerStream);
-	combineOutputStream(pktEventDataStream, isFinalCornerStream, xStreamOut, yStreamOut, polStreamOut, tsStreamOut, custDataStreamOut);
-
+    GetData: truncateStream(xStreamIn, yStreamIn, polStreamIn, tsStreamIn, xStream, yStream, tsStream, pktEventDataStream);
+    Processing: for(int i = 0; i < 2; i++)
+	{
+#pragma HLS DATAFLOW
+		initStageStream(stageInStream, stageOutStream);
+		rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
+		convertInterface<4>(outer, size, inStream);
+		sortedIdxStream<2>(inStream, size, idxData);
+		checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
+		feedbackStream(isStageCorner, stageInStream, isFinalCornerStream);
+	}
+    Output: combineOutputStream(pktEventDataStream, isFinalCornerStream, xStreamOut, yStreamOut, polStreamOut, tsStreamOut, custDataStreamOut);
 	*status = glStatus;
 }

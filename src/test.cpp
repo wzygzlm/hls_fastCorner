@@ -628,16 +628,32 @@ int main ()
 
     int total_err_cnt = 0;
 	int retval=0;
-	/******************* Test parseEvents module from random value**************************/
+	/******************* Test EVFastCornerStreamNoAxiLite module from random value**************************/
 	srand(3);
+//	srand((unsigned)time(NULL));
+
 	int32_t eventCnt = 6000;
-	uint8_t x[eventCnt], y[eventCnt];
-	uint64_t ts[eventCnt];
-	bool pol[eventCnt];
+	uint16_t x[eventCnt], y[eventCnt], x_out[eventCnt], y_out[eventCnt];
+	uint64_t ts[eventCnt], ts_out[eventCnt];
+	ap_uint<1> pol[eventCnt], pol_out[eventCnt];
+	ap_uint<10> custData_out[eventCnt];
 	uint64_t data[eventCnt];
 	uint64_t eventSlice[eventCnt], eventSliceSW[eventCnt];
 
-	testTimes = 10;
+    hls::stream< ap_uint<16> >  xStreamIn("xStreamIn");
+    hls::stream< ap_uint<16> >  yStreamIn("yStreamIn");
+    hls::stream< ap_uint<64> > tsStreamIn("tsStreamIn");
+    hls::stream< ap_uint<1> > polStreamIn("polStreamIn");
+
+    hls::stream< ap_uint<16> >  xStreamOut("xStreamOut");
+    hls::stream< ap_uint<16> >  yStreamOut("yStreamOut");
+    hls::stream< ap_uint<64> > tsStreamOut("tsStreamOut");
+    hls::stream< ap_uint<1> > polStreamOut("polStreamOut");
+    hls::stream< ap_uint<10> > custDataStreamOut("custDataStreamOut");
+    ap_uint<32> config = 0;
+    status_t status;
+
+    testTimes = 8;
 
 	for(int k = 0; k < testTimes; k++)
 	{
@@ -663,26 +679,56 @@ int main ()
 //			cout << "y : " << y << endl;
 //			cout << "idx : " << idx << endl;
 
-			data[i] = (uint64_t)(ts[i] << 32) + (uint64_t)(x[i] << 17) + (uint64_t)(y[i] << 2) + (pol[i] << 1);
+			data[i] = (uint64_t)(ts[i] << 32) + (uint64_t)(x[i] << 17) + (uint64_t)(y[i] << 2) + (pol[i].to_bool() << 1);
 //			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
+			xStreamIn << x[i];
+			yStreamIn << y[i];
+			polStreamIn << pol[i];
+			tsStreamIn << ts[i];
+
+			EVFastCornerStreamNoAxiLite(xStreamIn, yStreamIn, tsStreamIn, polStreamIn,
+				xStreamOut, yStreamOut, tsStreamOut, polStreamOut, custDataStreamOut,
+				config, &status);
+
+			x_out[i] = xStreamOut.read().to_uint();
+			y_out[i] = yStreamOut.read().to_uint();
+			ts_out[i] = tsStreamOut.read().to_uint();
+			pol_out[i] = polStreamOut.read().to_bool();
+			custData_out[i] = custDataStreamOut.read().to_uint();
+
 		}
 
 		parseEventsSW(data, eventCnt, eventSliceSW);
-		parseEventsHW(data, eventCnt, eventSlice);
 
 		for (int j = 0; j < eventCnt; j++)
 		{
 			// Important info is only contained in the lower 32bits
-			if (ap_uint<64>(eventSlice[j]).range(31, 0) != ap_uint<64>(eventSliceSW[j]).range(31, 0))
-			{
-				std::cout << "eventSliceSW is: " << eventSliceSW[j] << std::endl;
-				std::cout << "eventSlice is: " << eventSlice[j] << std::endl;
+			uint16_t x_sw, y_sw;
+			ap_uint<1> pol_sw;
+			ap_uint<10> custData_sw;
 
+			ap_uint<32> tmpOutput = ap_uint<32>(eventSliceSW[j]);
+
+			// Change the order back
+			ap_uint<64> tmpData;
+			tmpData.range(7,0) = tmpOutput.range(31,24);
+			tmpData.range(15,8) = tmpOutput.range(23,16);
+			tmpData.range(23,16) = tmpOutput.range(15,8);
+			tmpData.range(31,24) = tmpOutput.range(7,0);
+
+			x_sw = tmpData.range(21, 12);
+			y_sw = tmpData.range(31, 22);
+			pol_sw = tmpData[11];
+			custData_sw = tmpData.range(10, 0);
+
+			x_sw = sensor_width_ - 1 - x_sw;
+			y_sw = sensor_height_ - 1 - y_sw;
+			if (x_sw != x_out[j] || y_sw != y_out[j] || custData_sw != custData_out[j])
+			{
 				cout << "j : " << j << endl;
-				cout << "x : " << int(x[j]) << endl;
-				cout << "y : " << int(y[j]) << endl;
-				cout << "ts : " << ts[j] << endl;
-				cout << "pol : " << pol[j] << endl;
+				cout << "x_sw : " << x_sw << "\t x_hw is: " << x_out[j] << endl;
+				cout << "y_sw : " << x_sw << "\t y_hw is: " << y_out[j] << endl;
+				cout << "corner_sw : " << custData_sw.to_int() << "\t corner_hw is: " << custData_out[j].to_int() << endl;
 
 				err_cnt++;
 				cout << "Mismatch detected on TEST " << k << " and the mismatch index is: " << j << endl;
@@ -700,6 +746,79 @@ int main ()
 		total_err_cnt += err_cnt;
 		cout << endl;
 	}
+
+//	/******************* Test parseEvents module from random value**************************/
+//	srand(3);
+//	int32_t eventCnt = 6000;
+//	uint8_t x[eventCnt], y[eventCnt];
+//	uint64_t ts[eventCnt];
+//	bool pol[eventCnt];
+//	uint64_t data[eventCnt];
+//	uint64_t eventSlice[eventCnt], eventSliceSW[eventCnt];
+//
+//	testTimes = 10;
+//
+//	for(int k = 0; k < testTimes; k++)
+//	{
+//		cout << "Test " << k << ":" << endl;
+//
+//	    int err_cnt = 0;
+//
+//		for (int i = 0; i < eventCnt; i++)
+//		{
+//			ts[i]  = rand();
+//		}
+//		sort(ts, ts+eventCnt);
+//
+//		for (int i = 0; i < eventCnt; i++)
+//		{
+//			x[i] = rand()%240;
+//			y[i] = rand()%180;
+//			pol[i] = 1;
+////			idx = rand()%3;
+//	//		x = 255;
+//	//		y = 240;
+////			cout << "x : " << x << endl;
+////			cout << "y : " << y << endl;
+////			cout << "idx : " << idx << endl;
+//
+//			data[i] = (uint64_t)(ts[i] << 32) + (uint64_t)(x[i] << 17) + (uint64_t)(y[i] << 2) + (pol[i] << 1);
+////			cout << "data[" << i << "] is: "<< hex << data[i]  << endl;
+//		}
+//
+//		parseEventsSW(data, eventCnt, eventSliceSW);
+//		parseEventsHW(data, eventCnt, eventSlice);
+//
+//		for (int j = 0; j < eventCnt; j++)
+//		{
+//			// Important info is only contained in the lower 32bits
+//			if (ap_uint<64>(eventSlice[j]).range(31, 0) != ap_uint<64>(eventSliceSW[j]).range(31, 0))
+//			{
+//				std::cout << "eventSliceSW is: " << eventSliceSW[j] << std::endl;
+//				std::cout << "eventSlice is: " << eventSlice[j] << std::endl;
+//
+//				cout << "j : " << j << endl;
+//				cout << "x : " << int(x[j]) << endl;
+//				cout << "y : " << int(y[j]) << endl;
+//				cout << "ts : " << ts[j] << endl;
+//				cout << "pol : " << pol[j] << endl;
+//
+//				err_cnt++;
+//				cout << "Mismatch detected on TEST " << k << " and the mismatch index is: " << j << endl;
+//			}
+//		}
+//
+//		if(err_cnt == 0)
+//		{
+//			cout << "Test " << k << " passed." << endl;
+//		}
+//		else
+//		{
+//			cout << "Test " << k << " failed!!!" << endl;
+//		}
+//		total_err_cnt += err_cnt;
+//		cout << endl;
+//	}
 
 //	/******************* Test FastCheckOuterCornerSW module from random value**************************/
 ////	srand((unsigned)time(NULL));

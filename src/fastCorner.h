@@ -48,6 +48,13 @@ typedef ap_uint<1> apUint1_t;
 
 #define LOOPS_PER_EVENT 2   // To process one event, how many loops are required
 
+typedef struct
+{
+	uint64_t inEventsNum;
+	uint64_t outEventsNum;
+	uint64_t cornerEventsNum;
+} status_t;
+
 //#define SIZE 16
 void mergeSortParallelWithSize(ap_uint<TS_TYPE_BIT_WIDTH> A[OUTER_SIZE], ap_uint<8> num_symbols,  ap_uint<TS_TYPE_BIT_WIDTH> B[OUTER_SIZE]);
 void insertionCellSort(ap_uint<TS_TYPE_BIT_WIDTH> inData[20], ap_uint<TS_TYPE_BIT_WIDTH> outputData[20]);
@@ -70,5 +77,8 @@ void fastCornerInnerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uin
 void fastCornerOuterHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<1> *isCorner);
 void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> *isCorner);
 void parseEventsHW(uint64_t * dataStream, int32_t eventsArraySize, uint64_t *eventSlice);
-
+void EVFastCornerStreamNoAxiLite(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<16> > &yStreamIn, hls::stream< ap_uint<64> > &tsStreamIn, hls::stream< ap_uint<1> > &polStreamIn,
+		hls::stream< ap_uint<16> > &xStreamOut, hls::stream< ap_uint<16> > &yStreamOut, hls::stream< ap_uint<64> > &tsStreamOut, hls::stream< ap_uint<1> > &polStreamOut,
+		hls::stream< ap_uint<10> > &custDataStreamOut,
+		ap_uint<32> config, status_t *status);
 #endif
