@@ -8,7 +8,7 @@
 
 #define DEBUG 0
 
-#define DVS_WIDTH  204
+#define DVS_WIDTH  512
 
 #define POLARITY_SHIFT 1
 #define POLARITY_MASK 0x00000001
@@ -25,10 +25,10 @@ typedef ap_uint<1> apUint1_t;
 
 // Change these two together
 #define RESHAPE_FACTOR 16
-#define DVS_HEIGHT RESHAPE_FACTOR*10
+#define DVS_HEIGHT RESHAPE_FACTOR*18
 
-#define X_TYPE ap_uint<8>
-#define Y_TYPE ap_uint<8>
+#define X_TYPE ap_uint<10>
+#define Y_TYPE ap_uint<10>
 
 // Change them together
 #define TS_TYPE_BIT_WIDTH 32

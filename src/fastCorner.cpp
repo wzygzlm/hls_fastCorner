@@ -855,10 +855,10 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 32;
 
 	apUint49_t tmpOutput;
-	tmpOutput[16] = ap_uint<1>(pol);
-	tmpOutput.range(15, 8) = yWr;
-	tmpOutput.range(7, 0) = xWr;
-	tmpOutput.range(48, 17) = ts.range(31, 0);
+	tmpOutput[20] = ap_uint<1>(pol);
+	tmpOutput.range(19, 10) = yWr;
+	tmpOutput.range(9, 0) = xWr;
+	tmpOutput.range(52, 21) = ts.range(31, 0);
 	packetEventDataStream << tmpOutput;
 
 	// TODO: Removed the hardcoded code invalid event
@@ -866,9 +866,10 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	// only check if not too close to border
 	const int cs = max_scale*20;
 	// Make this event an invalid event
-	// The maximum range of x is [0, 200), 4 is the corner block range.
-	if (xWr < 20 || xWr >= 240-20-4 ||
-			yWr < 20 || yWr >= 180-20-4 || pol == 0)
+	// 4 is the corner block range.
+	// Remember x,y is inverted in the raw stream.
+	if (xWr < cs || xWr >= DVS_HEIGHT-cs-4 ||
+			yWr < cs || yWr >= DVS_WIDTH-cs-4 || pol == 0)
 	{
 		xWr = 0;
 		yWr = 0;
@@ -2011,6 +2012,7 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 	}
 }
 
+// To make it work on different size chip, this function should be modified sometimes.
 void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<apUint49_t> &packetEventDataStream, uint64_t *eventSlice)
 {
 #pragma HLS INLINE
@@ -2018,7 +2020,7 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 //	if(glFeedbackCounter%2 == 1)
 //	{
 	apUint49_t tmp1 = apUint49_t(packetEventDataStream.read());
-	ap_uint<64> output = tmp1.range(16, 0);
+	ap_uint<64> output = tmp1.range(19, 0);
 	ap_uint<1> isCornerStage0 = isFinalCornerStream.read();
 	ap_uint<1> isCornerStage1 = isFinalCornerStream.read();
 	ap_uint<1> isCorner = isCornerStage0 & isCornerStage1;
@@ -2027,9 +2029,9 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 	ap_uint<32> xWr, yWr;
 	bool pol;
 
-	xWr = 239 - (tmp1 & 0xff);
-	yWr = 179 - ((tmp1 >> 8) & 0xff);
-	pol = tmp1.bit(16).to_bool();
+	xWr = DVS_WIDTH -1 - (tmp1 & 0x3ff);
+	yWr = DVS_HEIGHT -1 - ((tmp1 >> 10) & 0x3ff);
+	pol = tmp1.bit(20).to_bool();
 
 	ap_uint<32> tmpOutput = (0 << 31) + (yWr << 22) + (xWr << 12)  + (pol << 11) + isCorner;
 
@@ -2159,9 +2161,10 @@ void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<
 	// only check if not too close to border
 	const int cs = max_scale*20;
 	// Make this event an invalid event
-	// The maximum range of x is [0, 200), 4 is the corner block range.
-	if (x < 20 || x >= 240-20-4 ||
-			y < 20 || y >= 180-20-4 || pol == 0)
+	// 4 is the corner block range.
+	// Remember x,y is inverted in the raw stream.
+	if (x < cs || x >= DVS_WIDTH-cs-4 ||
+			y < cs || y >= DVS_HEIGHT-cs-4 || pol == 0)
 	{
 		x = 0;
 		y = 0;

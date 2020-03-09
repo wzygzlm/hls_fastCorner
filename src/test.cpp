@@ -14,8 +14,8 @@ const static int MAX_NUMBER=1000;
 #define DTYPE ap_uint<32>
 #define TEST_TIMES 200
 
-static const int sensor_width_ = 240;
-static const int sensor_height_ = 180;
+static const unsigned int sensor_width_ = DVS_WIDTH;
+static const unsigned int sensor_height_ = DVS_HEIGHT;
 
 // SAE (Surface of Active Event)
 static int sae_[2][DVS_HEIGHT][DVS_WIDTH];
@@ -653,7 +653,7 @@ int main ()
     ap_uint<32> config = 0;
     status_t status;
 
-    testTimes = 8;
+    testTimes = 10;
 
 	for(int k = 0; k < testTimes; k++)
 	{
@@ -669,8 +669,8 @@ int main ()
 
 		for (int i = 0; i < eventCnt; i++)
 		{
-			x[i] = rand()%240;
-			y[i] = rand()%180;
+			x[i] = rand()%346;
+			y[i] = rand()%260;
 			pol[i] = 1;
 //			idx = rand()%3;
 	//		x = 255;
@@ -727,7 +727,7 @@ int main ()
 			{
 				cout << "j : " << j << endl;
 				cout << "x_sw : " << x_sw << "\t x_hw is: " << x_out[j] << endl;
-				cout << "y_sw : " << x_sw << "\t y_hw is: " << y_out[j] << endl;
+				cout << "y_sw : " << y_sw << "\t y_hw is: " << y_out[j] << endl;
 				cout << "corner_sw : " << custData_sw.to_int() << "\t corner_hw is: " << custData_out[j].to_int() << endl;
 
 				err_cnt++;
@@ -772,8 +772,8 @@ int main ()
 //
 //		for (int i = 0; i < eventCnt; i++)
 //		{
-//			x[i] = rand()%240;
-//			y[i] = rand()%180;
+//			x[i] = rand()%346;
+//			y[i] = rand()%260;
 //			pol[i] = 1;
 ////			idx = rand()%3;
 //	//		x = 255;
