@@ -845,7 +845,7 @@ void updateSAE(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts)
 	saeHW[0][y/RESHAPE_FACTOR][x] = tmpData;
 }
 
-void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream<apUint49_t> &packetEventDataStream)
+void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream< ap_uint<64> > &packetEventDataStream)
 {
 #pragma HLS PIPELINE
 	uint64_t tmp = *data;
@@ -854,7 +854,7 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	bool pol  = ((tmp) >> POLARITY_SHIFT) & POLARITY_MASK;
 	ap_uint<TS_TYPE_BIT_WIDTH> ts = tmp >> 32;
 
-	apUint49_t tmpOutput;
+	ap_uint<64> tmpOutput;
 	tmpOutput[20] = ap_uint<1>(pol);
 	tmpOutput.range(19, 10) = yWr;
 	tmpOutput.range(9, 0) = xWr;
@@ -864,12 +864,12 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	// TODO: Removed the hardcoded code invalid event
 	const int max_scale = 1;
 	// only check if not too close to border
-	const int cs = max_scale*20;
+	const int cs = max_scale*6;
 	// Make this event an invalid event
 	// 4 is the corner block range.
 	// Remember x,y is inverted in the raw stream.
-	if (xWr < cs || xWr >= DVS_HEIGHT-cs-4 ||
-			yWr < cs || yWr >= DVS_WIDTH-cs-4 || pol == 0)
+	if (xWr < cs || xWr >= DVS_REAL_WIDTH-cs-4 ||
+			yWr < cs || yWr >= DVS_REAL_HEIGHT-cs-4 || pol == 0)
 	{
 		xWr = 0;
 		yWr = 0;
@@ -877,8 +877,10 @@ void getXandY(const uint64_t * data, hls::stream<X_TYPE> &xStream, hls::stream<Y
 	}
 	else
 	{
-		xWr -= 16;
-		yWr -= 16;
+		 // The reason why we sub cs-4 is to reduce the memory we need.
+		 // In this case, only memory for valid events is required.
+		xWr -= cs-4;
+		yWr -= cs-4;
 	}
 
 	xStream << xWr;
@@ -1204,7 +1206,7 @@ void rwSAEStream(hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls
 
 
 
-// This function is ony for outer corner test
+// This function is only for outer corner test
 template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
 void rwSAEOuterTest(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<2>  stage, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
 {
@@ -2013,13 +2015,13 @@ void fastCornerHW(X_TYPE x, Y_TYPE y, ap_uint<TS_TYPE_BIT_WIDTH> ts, ap_uint<1> 
 }
 
 // To make it work on different size chip, this function should be modified sometimes.
-void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<apUint49_t> &packetEventDataStream, uint64_t *eventSlice)
+void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream< ap_uint<64> > &packetEventDataStream, uint64_t *eventSlice)
 {
 #pragma HLS INLINE
 	// Only output the result at the last part of the event processing.
 //	if(glFeedbackCounter%2 == 1)
 //	{
-	apUint49_t tmp1 = apUint49_t(packetEventDataStream.read());
+	ap_uint<64> tmp1 = ap_uint<64>(packetEventDataStream.read());
 	ap_uint<64> output = tmp1.range(19, 0);
 	ap_uint<1> isCornerStage0 = isFinalCornerStream.read();
 	ap_uint<1> isCornerStage1 = isFinalCornerStream.read();
@@ -2029,8 +2031,8 @@ void outputResult(hls::stream< ap_uint<1> > &isFinalCornerStream, hls::stream<ap
 	ap_uint<32> xWr, yWr;
 	bool pol;
 
-	xWr = DVS_WIDTH -1 - (tmp1 & 0x3ff);
-	yWr = DVS_HEIGHT -1 - ((tmp1 >> 10) & 0x3ff);
+	xWr = DVS_REAL_WIDTH -1 - (tmp1 & 0x3ff);
+	yWr = DVS_REAL_HEIGHT -1 - ((tmp1 >> 10) & 0x3ff);
 	pol = tmp1.bit(20).to_bool();
 
 	ap_uint<32> tmpOutput = (0 << 31) + (yWr << 22) + (xWr << 12)  + (pol << 11) + isCorner;
@@ -2069,7 +2071,7 @@ void parseEventsHW(uint64_t * data, int32_t eventsArraySize, uint64_t *eventSlic
     hls::stream<Y_TYPE>  yStream("yStream");
     hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > tsStream("tsStream");
 
-	hls::stream<apUint49_t> pktEventDataStream("pktEventDataStream");
+	hls::stream< ap_uint<64> > pktEventDataStream("pktEventDataStream");
 #pragma HLS STREAM variable=pktEventDataStream depth=3 dim=1
 #pragma HLS RESOURCE variable=pktEventDataStream core=FIFO_SRL
 
@@ -2159,12 +2161,12 @@ void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<
 	// TODO: Removed the hardcoded code invalid event
 	const int max_scale = 1;
 	// only check if not too close to border
-	const int cs = max_scale*20;
+	const int cs = max_scale*6;
 	// Make this event an invalid event
 	// 4 is the corner block range.
 	// Remember x,y is inverted in the raw stream.
-	if (x < cs || x >= DVS_WIDTH-cs-4 ||
-			y < cs || y >= DVS_HEIGHT-cs-4 || pol == 0)
+	if (x < cs || x >= DVS_REAL_WIDTH-cs-4 ||
+			y < cs || y >= DVS_REAL_HEIGHT-cs-4 || pol == 0)
 	{
 		x = 0;
 		y = 0;
@@ -2172,8 +2174,10 @@ void truncateStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_uint<
 	}
 	else
 	{
-		x -= 16;
-		y -= 16;
+		 // The reason why we sub cs-4 is to reduce the memory we need.
+		 // In this case, only memory for valid events is required.
+		x -= cs-4;
+		y -= cs-4;
 	}
 
 	xStreamOut << (X_TYPE)x;

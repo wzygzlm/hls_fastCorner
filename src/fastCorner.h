@@ -8,7 +8,18 @@
 
 #define DEBUG 0
 
-#define DVS_WIDTH  512
+// This two macros will not influence the slice memory size,
+// only used to indicate the real chip size.
+// Used for removing boarder events.
+#define DVS_REAL_WIDTH 346
+#define DVS_REAL_HEIGHT 260
+
+// If want to save more sources, this value could be chosen as some value which is easy to be calcuated
+// with sub and shift register. For example we could choose 448 here because 448 = 512-64.
+// So if some number x multiple by 448, if could be calucated by x*512 - x*64, and it means that
+// we can use sub and shift register to get the multiple result.
+// The reason we use 454 here is for memory utilization, because the maximum allowed number here is 455.
+#define DVS_WIDTH  454
 
 #define POLARITY_SHIFT 1
 #define POLARITY_MASK 0x00000001
@@ -24,8 +35,8 @@ typedef ap_uint<6> apUint6_t;
 typedef ap_uint<1> apUint1_t;
 
 // Change these two together
-#define RESHAPE_FACTOR 16
-#define DVS_HEIGHT RESHAPE_FACTOR*18
+#define RESHAPE_FACTOR 32
+#define DVS_HEIGHT RESHAPE_FACTOR*9
 
 #define X_TYPE ap_uint<10>
 #define Y_TYPE ap_uint<10>

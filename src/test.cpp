@@ -14,8 +14,8 @@ const static int MAX_NUMBER=1000;
 #define DTYPE ap_uint<32>
 #define TEST_TIMES 200
 
-static const unsigned int sensor_width_ = DVS_WIDTH;
-static const unsigned int sensor_height_ = DVS_HEIGHT;
+static const unsigned int sensor_width_ = DVS_REAL_WIDTH;
+static const unsigned int sensor_height_ = DVS_REAL_HEIGHT;
 
 // SAE (Surface of Active Event)
 static int sae_[2][DVS_HEIGHT][DVS_WIDTH];
@@ -449,7 +449,7 @@ void FastDetectorisFeature(int pix_x, int pix_y, int timesmp, bool polarity, boo
 
 	const int max_scale = 1;
 	// only check if not too close to border
-	const int cs = max_scale*20;
+	const int cs = max_scale*6;
 	if (pix_x < cs || pix_x >= sensor_width_-cs - 4 ||
 			pix_y < cs || pix_y >= sensor_height_-cs -4)
 	{
@@ -629,7 +629,7 @@ int main ()
     int total_err_cnt = 0;
 	int retval=0;
 	/******************* Test EVFastCornerStreamNoAxiLite module from random value**************************/
-	srand(3);
+	srand(2);
 //	srand((unsigned)time(NULL));
 
 	int32_t eventCnt = 6000;

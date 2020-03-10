@@ -19,4 +19,4 @@ solution2/sim
 solution2/*.log
 solution2/*.json
 solution2/script.tcl
-
+*~
