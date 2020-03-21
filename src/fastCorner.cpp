@@ -1204,6 +1204,133 @@ void rwSAEStream(hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls
 	}
 }
 
+template<int READ_NPC>   //  Due to the memory has 2 ports at most for arbitrary reading, here this number could be only 1 or 2.
+void rwSAEPerfectLoopStream(hls::stream<X_TYPE> &xStream, hls::stream<Y_TYPE> &yStream, hls::stream< ap_uint<TS_TYPE_BIT_WIDTH> > &tsStream, hls::stream< ap_uint<2> >  &stageStream, ap_uint<TS_TYPE_BIT_WIDTH> outputData[OUTER_SIZE], ap_uint<5> *size)
+{
+#pragma HLS RESOURCE variable=saeHW core=RAM_T2P_BRAM
+#pragma HLS INLINE off
+
+	X_TYPE x;
+	Y_TYPE y;
+	ap_uint<TS_TYPE_BIT_WIDTH> ts;
+	ap_uint<2> stage = 0;
+
+//	x = xStream.read();
+//	y = yStream.read();
+//	ts = tsStream.read();
+//
+//	stage = stageStream.read();
+//	*size = 0;
+
+	for(ap_int<8> i = -1 * READ_NPC; i < OUTER_SIZE; i = i + READ_NPC)
+	{
+#pragma HLS LOOP_TRIPCOUNT min=1 max=11
+#pragma HLS DEPENDENCE variable=saeHW inter false
+#pragma HLS PIPELINE rewind
+
+		if(i == -1 * READ_NPC)
+		{
+			x = xStream.read();
+			y = yStream.read();
+			ts = tsStream.read();
+
+			stage = stageStream.read();
+
+			// Invalid event
+			if(x == 0 || y == 0)
+			{
+				stage = 2;
+			}
+
+			if(stage == 0)
+			{
+//				updateSAE(x, y, ts);
+				*size = INNER_SIZE;
+			}
+			else if(stage == 1)
+			{
+				*size = OUTER_SIZE;
+			}
+			else
+			{
+				*size = 0;
+				break;
+			}
+		}
+		else
+		{
+			if(stage == 0)
+			{
+				if (i >= INNER_SIZE)
+				{
+					updateSAE(x, y, ts);
+					break;
+				}
+				else
+				{
+		            ap_uint<8 * READ_NPC> xInnerTest, xOuterTest;
+		            X_TYPE xInner[READ_NPC];
+		            Y_TYPE yInner[READ_NPC], yInnerNewIdx[READ_NPC];
+		        	rwSAEReadOffsetBitsLoop:
+		            for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+		            {
+		#pragma HLS UNROLL
+		            	ap_uint<8> tmpIndex;   // In  order to save the resource, we use bit operation to get the index of the inner/outer offset.
+		            	tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+		            	tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+		            	xInnerTest[j] = innerTest[tmpIndex];
+		            	xOuterTest[j] = outerTest[tmpIndex];
+		            }
+
+		            readNPCLoop:
+		            for (ap_uint<8> k = 0; k < READ_NPC; k++)
+		            {
+		                xInner[k] = x + ap_int<4>(xInnerTest(8 * k + 3, 8  * k));  // Change back from unsigned to signed.
+		                yInner[k] = y + ap_int<4>(xInnerTest(8 * k + 7, 8 * k + 4));          // Change back from unsigned to signed.
+		                yInnerNewIdx[k] = yInner[k]%RESHAPE_FACTOR;
+
+		                outputData[i + k] = readOneDataFromCol(saeHW[0][yInner[k]/RESHAPE_FACTOR][xInner[k]], yInnerNewIdx[k]);
+		            }
+
+		//			X_TYPE xOuter = x + xOuterTest(3, 0);
+		//			Y_TYPE yOuter = y + xOuterTest(7, 4);
+		//			Y_TYPE yOuterNewIdx = yOuter%RESHAPE_FACTOR;
+		//
+		//			outerCircle[i] = readOneDataFromCol(saeHW[0][yOuter/RESHAPE_FACTOR][xOuter], yOuterNewIdx);
+				}
+			}
+			else if(stage == 1)
+			{
+				ap_uint<8 * READ_NPC> xOuterTest;
+				X_TYPE xOuter[READ_NPC];
+				Y_TYPE yOuter[READ_NPC], yOuterNewIdx[READ_NPC];
+				rwSAEReadOuterOffsetBitsLoop:
+				for (ap_uint<8> j = 0; j < 8 * READ_NPC; j++)
+				{
+		#pragma HLS UNROLL
+					ap_uint<8> tmpIndex; // In  order to save the resource, we use bit operation to get the index of the inner/outer offset.
+					tmpIndex.range(7, 2 + READ_NPC) = ap_uint<8>(i * 8).range(7, 2 + READ_NPC);
+					tmpIndex.range(1 + READ_NPC, 0) = j.range(1 + READ_NPC, 0);
+					xOuterTest[j] = outerTest[tmpIndex];
+				}
+
+				readOuterNPCLoop:
+				for (ap_uint<8> k = 0; k < READ_NPC; k++)
+				{
+					xOuter[k] = x + ap_int<4>(xOuterTest(8 * k + 3, 8  * k));       // Change back from unsigned to signed.
+					yOuter[k] = y + ap_int<4>(xOuterTest(8 * k + 7, 8 * k + 4));    // Change back from unsigned to signed.
+					yOuterNewIdx[k] = yOuter[k]%RESHAPE_FACTOR;
+
+					outputData[i + k] = readOneDataFromCol(saeHW[0][yOuter[k]/RESHAPE_FACTOR][xOuter[k]], yOuterNewIdx[k]);
+				}
+			}
+//			else
+//			{
+//				break;
+//			}
+		}
+	}
+}
 
 
 // This function is only for outer corner test
@@ -2313,7 +2440,7 @@ void EVFastCornerStreamNoAxiLite(hls::stream< ap_uint<16> > &xStreamIn, hls::str
 	{
 #pragma HLS DATAFLOW
 		initStageStream(stageInStream, stageOutStream);
-		rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
+		rwSAEPerfectLoopStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
 		convertInterface<4>(outer, size, inStream);
 		sortedIdxStream<2>(inStream, size, idxData);
 		checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.
@@ -2378,7 +2505,7 @@ void EVFastCornerStream(hls::stream< ap_uint<16> > &xStreamIn, hls::stream< ap_u
 	{
 #pragma HLS DATAFLOW
 		initStageStream(stageInStream, stageOutStream);
-		rwSAEStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
+		rwSAEPerfectLoopStream<2>(xStream, yStream, tsStream, stageOutStream, outer, &size);
 		convertInterface<4>(outer, size, inStream);
 		sortedIdxStream<2>(inStream, size, idxData);
 		checkIdx<4>(idxData, size, &isStageCorner);   // If resource is not enough, decrease this number to increase II a little.

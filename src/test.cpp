@@ -653,7 +653,7 @@ int main ()
     ap_uint<32> config = 0;
     status_t status;
 
-    testTimes = 10;
+    testTimes = 6;
 
 	for(int k = 0; k < testTimes; k++)
 	{
